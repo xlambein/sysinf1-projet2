@@ -1,0 +1,18 @@
+while [heap is not empty] do
+
+    choix de aFact
+
+    for each thread
+        init thread
+    end
+
+    for each thread
+        join thread
+    end
+
+    divide heap by aFact
+    if [no divison possible] then
+        aFact is the solution
+    endif
+
+end
