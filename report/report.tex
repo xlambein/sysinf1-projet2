@@ -1,17 +1,18 @@
 \documentclass[a4paper,12pt]{article}
 
-\RequirePackage[utf8]{inputenc}
-\RequirePackage[T1]{fontenc}
-\RequirePackage[english,frenchb]{babel}
-\RequirePackage{enumitem}
+\usepackage{../latex/mystyle}
 
 
-\usepackage[in]{fullpage}
-\usepackage{caption}
-\usepackage{listings}
+%\usepackage[in]{fullpage}
+%\usepackage{caption}
+%\usepackage{listings}
 
-\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
-\lstset{framextopmargin=50pt,frame=bottomline}
+\lstset{
+    basicstyle=\footnotesize\ttfamily,
+    frame=single,
+    numbers=left,
+    breaklines=true,
+}
 
 \title{LSINF1252 : Projet 2 \\
        Factorisation de nombres}
