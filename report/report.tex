@@ -36,5 +36,17 @@ Voici le pseudocode pour le thread principal:
 
 Remarquons que si la boucle \texttt{while} se finit, l'input est incorrect, car cela signifie qu'aucun facteur premier ne divise exactement un nombre exactement une fois.
 
+Les $n$ threads recherchent des facteurs du nombre courant \texttt{toFact} en parcourant tous les entiers de 2 à $\sqrt{\texttt{toFact}}$, avec un pas de $n$: le premier thread itérant sur $i=2,2+n,2+2n,\dots$; le second thread itérant sur $i=3,3+n,3+2n,\dots$; etc. Pour chaque $i$, le programme regarde s'il divise \texttt{toFact}. Dans ce cas, il s'agit d'un facteur (pas nécessairement premier), et la procédure décrite ci-dessus est appliquée.
+
+Voici le pseudocode pour les threads de recherche de facteurs:
+
+\lstinputlisting{nththread}
+
+\subsection*{Synchronisation des threads}
+
+Notre programme ne présente qu'une seule section critique à proprement parler: il s'agit du moment où un thread a trouvé un facteur de \texttt{toFact}. Celui-ci bloque alors une mutex qui empêche l'écriture sur la variable partagée \texttt{toFact}, ce qui permet au thread de diviser celle-ci par le facteur en toute sécurité. À l'intérieur de la section protégée par la mutex, le programme vérifie d'abord à nouveau si le facteur trouvé divise bel et bien \texttt{toFact}, pour être certain que la valeur de celui-ci n'aurait pas changée avant que la mutex ne soit bloquée.
+
+Une deuxième zone de synchronisation apparaît lorsque tous les threads ont terminé de parcourir les entiers entre 2 et $\sqrt{\texttt{toFact}}$. Le thread principal est alors chargé de vérifier si une solution a été trouvée, et sinon de continuer l'algorithme avec le nombre suivant présent sur le heap. Il fait cela de manière très simple, en tuant les $n$ threads, effectuant les vérifcations, puis éventuellement en relançant $n$ nouveaux threads.
+
 \end{document}
 
