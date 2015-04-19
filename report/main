@@ -1,18 +1,25 @@
-while [heap is not empty] do
+read all input integers
+push them to heap
 
-    choix de aFact
+while heap is not empty:
 
-    for each thread
-        init thread
+    get toFact from heap
+
+    for i in 1..n:
+        init thread i with (start=1+i, step=n)
     end
 
-    for each thread
-        join thread
+    for i in 1..n:
+        join thread i
     end
 
-    divide heap by aFact
-    if [no divison possible] then
-        aFact is the solution
-    endif
+    divide heap by toFact
+
+    if no divison possible:
+        toFact is the solution
+        print it and exit
+    end
 
 end
+
+(if the loop ends input is invalid)

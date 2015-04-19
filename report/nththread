@@ -1,11 +1,14 @@
+for i = start, i*i <= toFact, i += step:
 
-for [i = 0; i*i < aFact; i++] do
-    if (aFact % i) == 0 then
-        lock mut_aFact
-        if (aFact % i) == 0 then
-            push i to heap
-            aFact /= i
-        endif
-        unlock mut_aFact
-    endif
+    if i divides toFact:
+
+        lock mut_toFact
+            if i divides toFact:
+                push i to heap
+                divide toFact by i
+            end
+        unlock mut_toFact
+
+    end
+
 end

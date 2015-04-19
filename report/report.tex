@@ -20,11 +20,21 @@
 \end{tabu}
 \end{center}
 
-texte
+\vspace{0.7cm}
+
+\texttt{TL;DR.} Nous avons choisi l'algorithme de divisions successives, sur lequel nous lançons plusieurs threads qui testent la division avec des valeurs de départ décalées.
+
+\subsection*{Déroulement}
+
+Nous commençons par lire tous les entiers à factoriser et nous les plaçons dans un heap (dans l'ordre inversé, avec le plus petit au-dessus). Ensuite, tant que le heap n'est pas vide, nous enlevons le plus petit entier du heap et nous lançons dessus les $n$ threads à notre disposition. Dès qu'ils trouvent un facteur, ils l'ajoutent au heap et divisent la valeur à factoriser.
+
+Une fois que les $n$ threads ont tous atteint la racine, cela signifie que le nombre restant est premier. Nous essayons de diviser chaque nombre dans le heap par ce facteur premier. Si aucun n'est divisible, ce nombre est la solution. Sinon nous continuons.
+
+Voici le pseudocode pour le thread principal:
 
 \lstinputlisting{main}
 
-autour
+Remarquons que si la boucle \texttt{while} se finit, l'input est incorrect, car cela signifie qu'aucun facteur premier ne divise exactement un nombre exactement une fois.
 
 \end{document}
 
