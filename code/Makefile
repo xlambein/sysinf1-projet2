@@ -1,4 +1,4 @@
-CC=gcc
+CC=gcc -std=c99
 CFLAGS=-W -Wall
 LDFLAGS=-lpthread
 EXEC=project2
@@ -20,7 +20,7 @@ project2: $(OBJ)
 # Static rule for .o files
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
-	$(CC) -MM $(CFLAGS) $*.cpp > $*.d
+	$(CC) -MM $(CFLAGS) $*.c > $*.d
 	@mv -f $*.d $*.d.tmp
 	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
 	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
