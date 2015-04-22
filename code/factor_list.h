@@ -7,7 +7,7 @@ typedef struct
 {
     ll num;
     int occur;
-    char *file;
+    char *filename;
 }
 factor_t;
 
