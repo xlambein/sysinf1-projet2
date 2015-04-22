@@ -1,25 +1,49 @@
 read all input integers
 push them to heap
 
-while heap is not empty:
+boolean alreadyNoReaders = false
 
-    get toFact from heap
+while true:
+        
+    wait for sem_full
+    
+    if numReaders == 0 && !alreadyNoReaders:
+        alreadyNoReaders = true
+        lock mut_stacks
+            if there's a factor with zero occurences in the factor register:
+                print it
+                goto cleanup
+            free the factor register
+        unlock mut_stacks
+    
+    else: (stack is not empty)
+        get the minimum from the stack, name it toFact
 
-    for i in 1..n:
-        init thread i with (start=1+i, step=n)
+        for i in 1..n:
+            init thread i with (start=1+i, step=n)
+        end
+
+        for i in 1..n:
+            join thread i
+        end
+
+        lock mut_stacks
+            divide stack by toFact
+            get number of occurrences of the factor
+            
+            if alreadyNoReaders:
+                if occurrences == 0:
+                    print it
+                    goto cleanup
+            else:
+                add factor to the factor register with occurrences
+        unlock mut_stacks
     end
-
-    for i in 1..n:
-        join thread i
-    end
-
-    divide heap by toFact
-
-    if no divison possible:
-        toFact is the solution
-        print it and exit
-    end
-
 end
+
+cleanup:
+    unlock mut_stacks
+    free ALL THE THINGS
+    exit
 
 (if the loop ends input is invalid)
