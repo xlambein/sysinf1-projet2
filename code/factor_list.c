@@ -3,7 +3,7 @@
 
 #define STARTING_SIZE 32
 
-factor_list_t *new_list()
+factor_list_t *list_new()
 {
     // Allocate the structure
     factor_list_t *list = (factor_list_t *) malloc(sizeof(factor_list_t));
@@ -22,14 +22,14 @@ factor_list_t *new_list()
     return list;
 }
 
-void free_list(factor_list_t *list)
+void list_free(factor_list_t *list)
 {
     // Free the internal list then the structure
     free(list->list);
     free(list);
 }
 
-void push(factor_list_t *list, factor_t factor)
+void list_push(factor_list_t *list, factor_t factor)
 {
     // If there is not enough space
     if (list->size == list->cont_size)
@@ -48,25 +48,25 @@ void push(factor_list_t *list, factor_t factor)
     }
     
     // Add the factor at the end and increase the size
-    *end(list) = factor;
+    *list_end(list) = factor;
     list->size++;
 }
 
-void remove(factor_list_t *list, factor_t *to_remove)
+void list_remove(factor_list_t *list, factor_t *to_remove)
 {
     // Decrease the size
     list->size--;
     
     // Move the last element over to the free position
-    *to_remove = *end(list);
+    *to_remove = *list_end(list);
 }
 
-factor_t *begin(factor_list_t *list)
+factor_t *list_begin(factor_list_t *list)
 {
     return list->list;
 }
 
-factor_t *end(factor_list_t *list)
+factor_t *list_end(factor_list_t *list)
 {
     return list->list + list->size;
 }
