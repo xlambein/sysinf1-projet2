@@ -29,10 +29,10 @@ int main(int argc, char *argv[])
     check(!pthread_mutex_init(&mut_state, NULL),
             "pthread_mutex_init");
 
-    check((waiting_list = new_list()) != NULL,
-            "new_list");
-    check((factor_list = new_list()) != NULL,
-            "new_list");
+    check((waiting_list = list_new()) != NULL,
+            "list_new");
+    check((factor_list = list_new()) != NULL,
+            "list_new");
 
     for (int i = 1; i < argc; i++)
     {
@@ -111,8 +111,8 @@ int main(int argc, char *argv[])
     check(!pthread_mutex_destroy(&mut_state),
             "pthread_mutex_destroy");
 
-    free_list(waiting_list);
-    free_list(factor_list);
+    list_free(waiting_list);
+    list_free(factor_list);
 
     return EXIT_SUCCESS;
 error:

@@ -13,6 +13,7 @@ void *factorize(void *starting_state)
         if (st->to_fact->num % i == 0)
         {
             check(!pthread_mutex_lock(&mut_state), "pthread_lock_mutex");
+            {
                 if (st->to_fact->num % i == 0)
                 {
                     factor_t factor_found;
@@ -23,6 +24,7 @@ void *factorize(void *starting_state)
                     st->to_fact->num /= i;
                     check(!sem_post(&sem_full), "sem_post");
                 }
+            }
             check(!pthread_mutex_unlock(&mut_state), "pthread_unlock_mutex");
         }
     }
