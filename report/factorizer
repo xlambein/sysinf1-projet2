@@ -4,7 +4,10 @@ for i = start, i*i <= toFact, i += step:
 
         lock mut_toFact
             if i divides toFact:
-                push i to heap
+                lock mut_stacks
+                    push i to stack
+                unlock mut_stacks
+                post sem_full
                 divide toFact by i
             end
         unlock mut_toFact

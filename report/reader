@@ -1,0 +1,8 @@
+while not EOF:
+    read an integer
+    lock mut_stacks
+        divide integer by all the prime factors
+        add it to the waiting list if it's not 1
+    unlock mut_stacks
+    post sem_full
+end
