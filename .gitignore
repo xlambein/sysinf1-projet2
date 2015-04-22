@@ -2,6 +2,9 @@
 *.o
 *.d
 
+# The project executable
+project2
+
 # Some temp files from various editors
 .*.swp
 *~
