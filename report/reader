@@ -1,8 +1,20 @@
 while not EOF:
     read an integer
-    lock mut_stacks
-        divide integer by all the prime factors
+    
+    lock mut_state
+        divide integer by all the factors in the prime list
         add it to the waiting list if it's not 1
-    unlock mut_stacks
+    unlock mut_state
+    
     post sem_full
 end
+
+lock mut_state
+    numReader--
+    if numReader == 0:
+        if there's a prime with zero occurences in the prime register:
+            print it
+            set found to true
+        free the prime list
+    end
+unlock mut_state

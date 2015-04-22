@@ -1,17 +1,17 @@
 for i = start, i*i <= toFact, i += step:
-
     if i divides toFact:
 
         lock mut_toFact
             if i divides toFact:
-                lock mut_stacks
-                    push i to stack
-                unlock mut_stacks
+
+                lock mut_state
+                    add i to waiting list
+                unlock mut_state
+
                 post sem_full
                 divide toFact by i
             end
         unlock mut_toFact
 
     end
-
 end

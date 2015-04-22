@@ -1,49 +1,34 @@
-read all input integers
-push them to heap
+launch readers
 
-boolean alreadyNoReaders = false
-
-while true:
-        
+while not found:
+    
     wait for sem_full
     
-    if numReaders == 0 && !alreadyNoReaders:
-        alreadyNoReaders = true
-        lock mut_stacks
-            if there's a factor with zero occurences in the factor register:
-                print it
-                goto cleanup
-            free the factor register
-        unlock mut_stacks
-    
-    else: (stack is not empty)
-        get the minimum from the stack, name it toFact
+    lock mut_state
+        toFact = minimum from waiting list
+    unlock mut_state
 
-        for i in 1..n:
-            init thread i with (start=1+i, step=n)
-        end
-
-        for i in 1..n:
-            join thread i
-        end
-
-        lock mut_stacks
-            divide stack by toFact
-            get number of occurrences of the factor
-            
-            if alreadyNoReaders:
-                if occurrences == 0:
-                    print it
-                    goto cleanup
-            else:
-                add factor to the factor register with occurrences
-        unlock mut_stacks
+    for i in 1..n:
+        init thread i with (start=1+i, step=n)
     end
+
+    for i in 1..n:
+        join thread i
+    end
+    
+    // toFact is a prime factor
+
+    lock mut_state
+        divide everything in the waiting list by toFact as much as possible
+        remember the number of divisions
+        
+        if numReader == 0:
+            if occurrences == 0:
+                print toFact
+                found = true
+        else:
+            add toFact to prime list with number of occurrences
+    unlock mut_state
 end
 
-cleanup:
-    unlock mut_stacks
-    free ALL THE THINGS
-    exit
-
-(if the loop ends input is invalid)
+free ALL THE THINGS
