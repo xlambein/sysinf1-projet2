@@ -6,26 +6,33 @@
 #include <stdbool.h>
 
 #include "dbg.h"
+#include "threads_utils.h"
+#include "factor_list.h"
+#include "reader.h"
 
 #define ARGNAME_MAXTHREADS "-maxthreads"
 #define ARGNAME_STDIN "-stdin"
 #define PREFIX_URL "http://"
 #define PREFIX_URL_LENGTH 7
 
-sem_t sem_full;
-pthread_mutex_t mut_state;
-
 int main(int argc, char *argv[])
 {
     int maxthreads = 1;
-    bool readFromStdin = false;
+    bool read_from_stdin = false;
     bool found = false;
+    factor_list_t * waiting_list,
+                  * factor_list;
 
-    //TODO: initialize semaphores and mutexes
+    //TODO: initialize stuff
     check(!sem_init(&sem_full, 0, 0),
             "sem_init");
     check(!pthread_mutex_init(&mut_state, NULL),
             "pthread_mutex_init");
+
+    check((waiting_list = new_list()) != NULL,
+            "new_list");
+    check((factor_list = new_list()) != NULL,
+            "new_list");
 
     for (int i = 1; i < argc; i++)
     {
@@ -34,10 +41,22 @@ int main(int argc, char *argv[])
             maxthreads = atoi(argv[i+1]);
             i++;
         }
-        else if (!readFromStdin && strcmp(argv[i], ARGNAME_STDIN))
+        else if (!read_from_stdin && strcmp(argv[i], ARGNAME_STDIN))
         {
-            readFromStdin = true;
-            //TODO: spawn a stdin reading thread
+            read_from_stdin = true;
+            pthread_t thread;
+
+            reader_starting_state_t * starting_state
+                = (reader_starting_state_t *) malloc(sizeof(reader_starting_state_t));
+            check(starting_state != NULL,
+                    "malloc");
+
+            starting_state->stream = stdin;
+
+            check(!pthread_create(&thread, NULL, &reader, starting_state),
+                    "pthread_create");
+
+            //TODO: be sure it's ok to create a thread in a local stack variable
         }
         else if (strncmp(argv[i], PREFIX_URL, PREFIX_URL_LENGTH))
         {
@@ -45,15 +64,42 @@ int main(int argc, char *argv[])
         }
         else
         {
-            //TODO: spawn a reading thread
+            pthread_t thread;
+
+            reader_starting_state_t * starting_state
+                = (reader_starting_state_t *) malloc(sizeof(reader_starting_state_t));
+            check(starting_state != NULL,
+                    "malloc");
+
+            check((starting_state->stream = fopen(argv[i], "r")) != NULL,
+                    "fopen");
+
+            check(!pthread_create(&thread, NULL, &reader, starting_state),
+                    "pthread_create");
+
+            //TODO: be sure it's ok to create a thread in a local stack variable
         }
     }
 
     while (!found)
     {
-        //TODO: spawn maxthreads threads
+        pthread_t *factorizers
+            = (pthread_t *) calloc(sizeof(pthread_t), maxthreads);
+        check(factorizers != NULL,
+                "calloc");
 
-        //TODO: join maxthreads threads
+        for (int i = 0; i < maxthreads; i++)
+        {
+            //TODO:
+            //check(!pthread_create(&factorizers[i], NULL, &factorizer, starting_state),
+            //        "pthread_create");
+        }
+
+        for (int i = 0; i < maxthreads; i++)
+        {
+            check(pthread_join(factorizers[i], NULL),
+                    "pthread_join");
+        }
         
         pthread_mutex_lock(&mut_state);
             //TODO: stuff
@@ -64,6 +110,9 @@ int main(int argc, char *argv[])
             "sem_destroy");
     check(!pthread_mutex_destroy(&mut_state),
             "pthread_mutex_destroy");
+
+    free_list(waiting_list);
+    free_list(factor_list);
 
     return EXIT_SUCCESS;
 error:
