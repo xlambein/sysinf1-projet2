@@ -1,4 +1,4 @@
-CC=gcc -std=c99
+CC=gcc -std=gnu99
 CFLAGS=-W -Wall
 LDFLAGS=-lpthread
 EXEC=project2
