@@ -54,7 +54,7 @@ void push(factor_list_t *list, factor_t factor)
 
 void remove(factor_list_t *list, factor_t *to_remove)
 {
-    // Decrease the size TODO test
+    // Decrease the size
     list->size--;
     
     // Move the last element over to the free position
