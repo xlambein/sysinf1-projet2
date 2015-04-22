@@ -1,14 +1,14 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=-lpthread
-EXEC=lifeafterdeath
+EXEC=project2
 SRC= $(wildcard *.c)
 OBJ= $(SRC:.c=.o)
 
 all: $(EXEC)
 
 # Print a warning if there are any to-dos left in the directory
-ifneq ($(shell "to""do" -l | wc -l), 0)
+ifneq ($(bash "to""do" -l | wc -l), 0)
 	@echo "\033[1;4;7;34mWarning:\033[0;34m some tasks are still left to do\033[0m"
 endif
 
