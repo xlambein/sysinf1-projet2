@@ -1,11 +1,11 @@
 #ifndef _FACTOR_LIST_H
 #define _FACTOR_LIST_H
 
-typedef long long ll;
+#include <stdint.h>
 
 typedef struct
 {
-    ll num;
+    uint64_t num;
     int occur;
     char *filename;
 }

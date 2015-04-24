@@ -5,7 +5,7 @@ typedef struct
 {
     factor_list_t *waiting_list;
     factor_t *to_fact;
-    ll start, step;
+    uint64_t start, step;
 }
 factorizer_starting_state_t;
 
