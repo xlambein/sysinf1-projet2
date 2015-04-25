@@ -9,9 +9,11 @@
 #include "threads_utils.h"
 #include "factor_list.h"
 #include "reader.h"
+#include "factorizer.h"
 
 #define ARGNAME_MAXTHREADS "-maxthreads"
 #define ARGNAME_STDIN "-stdin"
+#define STDIN_FILENAME "stdin"
 #define PREFIX_URL "http://"
 #define PREFIX_URL_LENGTH 7
 
@@ -19,11 +21,8 @@ int main(int argc, char *argv[])
 {
     int maxthreads = 1;
     bool read_from_stdin = false;
-    bool found = false;
-    factor_list_t * waiting_list,
-                  * factor_list;
+    char stdin_filename[] = STDIN_FILENAME;
 
-    //TODO: initialize stuff
     check(!sem_init(&sem_full, 0, 0),
             "sem_init");
     check(!pthread_mutex_init(&mut_state, NULL),
@@ -33,6 +32,11 @@ int main(int argc, char *argv[])
             "list_new");
     check((factor_list = list_new()) != NULL,
             "list_new");
+
+    // Lock the state mutex to be sure a reader doesn't finish before another
+    // is spawned
+    check(!pthread_mutex_lock(&mut_state),
+            "pthread_mutex_lock");
 
     for (int i = 1; i < argc; i++)
     {
@@ -48,10 +52,10 @@ int main(int argc, char *argv[])
 
             reader_starting_state_t * starting_state
                 = (reader_starting_state_t *) malloc(sizeof(reader_starting_state_t));
-            check(starting_state != NULL,
-                    "malloc");
+            check_mem(starting_state != NULL);
 
             starting_state->stream = stdin;
+            starting_state->filename = stdin_filename;
 
             check(!pthread_create(&thread, NULL, &reader, starting_state),
                     "pthread_create");
@@ -68,11 +72,11 @@ int main(int argc, char *argv[])
 
             reader_starting_state_t * starting_state
                 = (reader_starting_state_t *) malloc(sizeof(reader_starting_state_t));
-            check(starting_state != NULL,
-                    "malloc");
+            check_mem(starting_state != NULL);
 
             check((starting_state->stream = fopen(argv[i], "r")) != NULL,
                     "fopen");
+            starting_state->filename = argv[i];
 
             check(!pthread_create(&thread, NULL, &reader, starting_state),
                     "pthread_create");
@@ -81,19 +85,56 @@ int main(int argc, char *argv[])
         }
     }
 
+    check(!pthread_mutex_unlock(&mut_state),
+            "pthread_mutex_unlock");
+
+    pthread_t *factorizers
+        = (pthread_t *) malloc(sizeof(pthread_t)*maxthreads);
+    check_mem(factorizers != NULL);
+
     while (!found)
     {
-        pthread_t *factorizers
-            = (pthread_t *) calloc(sizeof(pthread_t), maxthreads);
-        check(factorizers != NULL,
-                "calloc");
+        sem_wait(&sem_full);
+
+        // Get smallest number from waiting list
+        
+        check(!pthread_mutex_lock(&mut_state),
+                "pthread_mutex_lock");
+
+        to_fact.num = UINT64_MAX;
+        factor_t * to_remove = NULL;
+        for (factor_t * it = list_begin(waiting_list);
+                it != list_end(waiting_list);
+                ++it)
+        {
+            if (it->num <= to_fact.num)
+                to_remove = it;
+        }
+        check(to_remove != NULL,
+                "Couldn't get smallest number from waiting list");
+
+        to_fact = *to_remove;
+        list_remove(waiting_list, to_remove);
+
+        check(!pthread_mutex_unlock(&mut_state),
+                "pthread_mutex_unlock");
+
+        // Spawn the factorizer threads
 
         for (int i = 0; i < maxthreads; i++)
         {
-            //TODO:
-            //check(!pthread_create(&factorizers[i], NULL, &factorizer, starting_state),
-            //        "pthread_create");
+            factorizer_starting_state_t * starting_state
+                = (factorizer_starting_state_t *) malloc(sizeof(factorizer_starting_state_t));
+            check_mem(starting_state != NULL);
+
+            starting_state->start = 2+i;
+            starting_state->step = maxthreads;
+
+            check(!pthread_create(&factorizers[i], NULL, &factorize, starting_state),
+                    "pthread_create");
         }
+
+        // Join the factorizer threads
 
         for (int i = 0; i < maxthreads; i++)
         {
@@ -102,9 +143,42 @@ int main(int argc, char *argv[])
         }
         
         pthread_mutex_lock(&mut_state);
-            //TODO: stuff
+
+        for (factor_t * it = list_begin(waiting_list);
+                it != list_end(waiting_list);
+                ++it)
+        {
+            while (it->num % to_fact.num)
+            {
+                it->num /= to_fact.num;
+                to_fact.occur++;
+            }
+            
+            // If the number is now 1, remove it from the waiting list
+            if (it->num == 1)
+            {
+                list_remove(waiting_list, it);
+                --it;
+            }
+        }
+
+        if (reader_count == 0)
+        {
+            if (to_fact.occur == 1)
+            {
+                found = true;
+                finish(&to_fact);
+            }
+        }
+        else
+        {
+            list_push(factor_list, to_fact);
+        }
+
         pthread_mutex_unlock(&mut_state);
     } 
+
+    free(factorizers);
 
     check(!sem_destroy(&sem_full),
             "sem_destroy");
@@ -112,7 +186,6 @@ int main(int argc, char *argv[])
             "pthread_mutex_destroy");
 
     list_free(waiting_list);
-    list_free(factor_list);
 
     return EXIT_SUCCESS;
 error:
