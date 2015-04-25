@@ -40,8 +40,11 @@ void *reader(void *arg)
                 ++it)
         {
             check(it->num != 0, "factor equal to 0");
-            if ((number % it->num) == 0)
+            while ((number % it->num) == 0)
+            {
                 number /= it->num;
+                it->occur++;
+            }
         }
 
         // Add it to the waiting list if it's not 1
@@ -82,13 +85,13 @@ error:
 
 void find_prime_with_one_occurrence()
 {
-    for (int i = 0; i < prime_list->size; i++)
+    for (factor_t *it = list_begin(prime_list); it != list_end(prime_list); it++)
     {
-        if (prime_list->list[i].occur == 1)
+        if (it->occur == 1)
         {
             found = true;
             to_fact.num = 1; // This will stop the factorizer threads
-            finish(&prime_list->list[i]);
+            finish(it);
             break;
         }
     }
