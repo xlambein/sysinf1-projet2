@@ -157,11 +157,7 @@ int main(int argc, char *argv[])
             {
                 //debug("start dividing other");
                 check(to_fact.num != 0, "factor equal to 0");
-                while (it->num % to_fact.num == 0)
-                {
-                    it->num /= to_fact.num;
-                    to_fact.occur++;
-                }
+                divide_as_much_as_possible(it, &to_fact);
                 //debug("stop dividing other");
                 
                 // If the number is now 1, remove it from the waiting list
