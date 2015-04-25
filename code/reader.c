@@ -33,25 +33,21 @@ void *reader(void *arg)
 
         check(!pthread_mutex_lock(&mut_state),
                 "pthread_mutex_lock");
-
+        
+        factor_t new_factor = {number, 1, st->filename};
         // Divide the number by every factor in the prime list
         for (factor_t * it = list_begin(prime_list);
                 it != list_end(prime_list);
                 ++it)
         {
             check(it->num != 0, "factor equal to 0");
-            while ((number % it->num) == 0)
-            {
-                number /= it->num;
-                it->occur++;
-            }
+            divide_as_much_as_possible(&new_factor, it);
         }
 
         // Add it to the waiting list if it's not 1
-        if (number != 1)
+        if (new_factor.num != 1)
         {
-            factor_t tmp = {number, 1, st->filename};
-            list_push(waiting_list, tmp);
+            list_push(waiting_list, new_factor);
             check(!sem_post(&sem_full),
                     "sem_post");
         }

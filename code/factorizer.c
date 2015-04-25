@@ -16,20 +16,12 @@ void *factorize(void *starting_state)
         {
             check(!pthread_mutex_lock(&mut_state), "pthread_lock_mutex");
             {
-                int occur = 0;
-                while (to_fact.num % i == 0)
+                factor_t factor_found = {i, 0, to_fact.filename};
+                divide_as_much_as_possible(&to_fact, &factor_found);
+                
+                if (factor_found.occur > 0)
                 {
-                    to_fact.num /= i;
-                    occur++;
-                }
-                if (occur > 0)
-                {
-                    debug("dividing by %llu, %d times", (ull) i, occur);
-                    
-                    factor_t factor_found;
-                    factor_found.num = i;
-                    factor_found.occur = occur;
-                    factor_found.filename = to_fact.filename;
+                    debug("dividing by %llu, %d times", (ull) i, factor_found.occur);
                     
                     list_push(waiting_list, factor_found);
                     check(!sem_post(&sem_full), "sem_post");

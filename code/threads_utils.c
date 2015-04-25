@@ -17,3 +17,11 @@ void finish(const factor_t * factor)
     printf("%" PRId64 "\n%s\n", factor->num, factor->filename);
 }
 
+void divide_as_much_as_possible(factor_t *to_divide, factor_t *divisor)
+{
+    while (to_divide->num % divisor->num == 0)
+    {
+        to_divide->num /= divisor->num;
+        divisor->occur += to_divide->occur;
+    }
+}
