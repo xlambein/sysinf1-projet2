@@ -1,3 +1,4 @@
+#include "dbg.h"
 #include "factor_list.h"
 #include <stdlib.h>
 
@@ -31,6 +32,7 @@ void list_free(factor_list_t *list)
 
 void list_push(factor_list_t *list, factor_t factor)
 {
+    //debug("adding %llu to the list", (unsigned long long) factor.num);
     // If there is not enough space
     if (list->size == list->cont_size)
     {
@@ -39,7 +41,7 @@ void list_push(factor_list_t *list, factor_t factor)
         
         // Copy the data
         factor_t *copy = (factor_t *) malloc(list->cont_size * sizeof(factor_t));
-        for (int i = 0; i < list->cont_size; i++)
+        for (int i = 0; i < list->size; i++)
             copy[i] = list->list[i];
         
         // Replace the internal list with the copy

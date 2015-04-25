@@ -10,7 +10,7 @@ void *factorize(void *starting_state)
 {
     factorizer_starting_state_t *st = (factorizer_starting_state_t *) starting_state;
     
-    for (uint64_t i = st->start; i * i < to_fact.num; i += st->step)
+    for (uint64_t i = st->start; i * i <= to_fact.num; i += st->step)
     {
         if (to_fact.num % i == 0)
         {
@@ -18,8 +18,10 @@ void *factorize(void *starting_state)
             {
                 if (to_fact.num % i == 0)
                 {
+                    debug("dividing by %llu", (unsigned long long) i);
                     factor_t factor_found;
                     factor_found.num = i;
+                    factor_found.occur = 1;
                     factor_found.filename = to_fact.filename;
                     
                     list_push(waiting_list, factor_found);

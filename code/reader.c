@@ -15,18 +15,19 @@
 void *reader(void *arg)
 {
 
-    debug("initializing reader");
+    //debug("initializing reader");
 
     reader_starting_state_t * st
         = (reader_starting_state_t *) arg;
 
-    debug("starting reading...");
+    //debug("starting reading...");
     uint64_t number;
     while (fread(&number, sizeof(uint64_t), 1, st->stream) == 1)
     {
-        debug("reading one number...");
+        //debug("reading one number...");
         // Convert the number from BigEndian
         number = be64toh(number);
+        //debug("reading %llu", (unsigned long long) number);
         check(number != 0 && number != 1,
                 "number equal to 0 or 1");
 
@@ -56,7 +57,7 @@ void *reader(void *arg)
                 "pthread_mutex_unlock");
     }
 
-    debug("finished reading");
+    //debug("finished reading");
 
 error:
     check(!pthread_mutex_lock(&mut_state),
@@ -75,8 +76,6 @@ error:
 
     if (st->stream != stdin)
         fclose(st->stream);
-    free((void *) st->filename);
-    free(st);
 
     return NULL;
 }

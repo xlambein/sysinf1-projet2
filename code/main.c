@@ -36,9 +36,10 @@ int main(int argc, char *argv[])
     check((factor_list = list_new()) != NULL,
             "list_new");
 
-    pthread_t *readers
-        = (pthread_t *) malloc(sizeof(pthread_t)*(argc-1));
+    pthread_t *readers = (pthread_t *) malloc(argc * sizeof(pthread_t));
     check_mem(readers != NULL);
+    reader_starting_state_t *readers_st = (reader_starting_state_t *) malloc(argc * sizeof(reader_starting_state_t));
+    check_mem(readers_st != NULL);
 
     // Lock the state mutex to be sure a reader doesn't finish before another
     // is spawned
@@ -59,14 +60,10 @@ int main(int argc, char *argv[])
 
             read_from_stdin = true;
 
-            reader_starting_state_t * starting_state
-                = (reader_starting_state_t *) malloc(sizeof(reader_starting_state_t));
-            check_mem(starting_state != NULL);
+            readers_st[i].stream = stdin;
+            readers_st[i].filename = stdin_filename;
 
-            starting_state->stream = stdin;
-            starting_state->filename = stdin_filename;
-
-            check(!pthread_create(&readers[i-1], NULL, &reader, starting_state),
+            check(!pthread_create(&readers[i], NULL, &reader, &readers_st[i]),
                     "pthread_create");
             reader_count++;
 
@@ -81,15 +78,11 @@ int main(int argc, char *argv[])
         {
             debug("spawning file reader thread...");
 
-            reader_starting_state_t * starting_state
-                = (reader_starting_state_t *) malloc(sizeof(reader_starting_state_t));
-            check_mem(starting_state != NULL);
-
-            check((starting_state->stream = fopen(argv[i], "r")) != NULL,
+            check((readers_st[i].stream = fopen(argv[i], "r")) != NULL,
                     "fopen");
-            starting_state->filename = argv[i];
+            readers_st[i].filename = argv[i];
 
-            check(!pthread_create(&readers[i-1], NULL, &reader, starting_state),
+            check(!pthread_create(&readers[i], NULL, &reader, &readers_st[i]),
                     "pthread_create");
             reader_count++;
 
@@ -100,9 +93,9 @@ int main(int argc, char *argv[])
     check(!pthread_mutex_unlock(&mut_state),
             "pthread_mutex_unlock");
 
-    pthread_t *factorizers
-        = (pthread_t *) malloc(sizeof(pthread_t)*maxthreads);
+    pthread_t *factorizers = (pthread_t *) malloc(maxthreads * sizeof(pthread_t));
     check_mem(factorizers != NULL);
+    factorizer_starting_state_t *factorizers_st = (factorizer_starting_state_t *) malloc(maxthreads * sizeof(factorizer_starting_state_t));
 
     while (!found)
     {
@@ -127,6 +120,7 @@ int main(int argc, char *argv[])
                 "Couldn't get smallest number from waiting list");
 
         to_fact = *to_remove;
+        debug("choosing %llu", (unsigned long long) to_fact.num);
         list_remove(waiting_list, to_remove);
 
         check(!pthread_mutex_unlock(&mut_state),
@@ -136,14 +130,10 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < maxthreads; i++)
         {
-            factorizer_starting_state_t * starting_state
-                = (factorizer_starting_state_t *) malloc(sizeof(factorizer_starting_state_t));
-            check_mem(starting_state != NULL);
+            factorizers_st[i].start = 2+i;
+            factorizers_st[i].step = maxthreads;
 
-            starting_state->start = 2+i;
-            starting_state->step = maxthreads;
-
-            check(!pthread_create(&factorizers[i], NULL, &factorize, starting_state),
+            check(!pthread_create(&factorizers[i], NULL, &factorize, &factorizers_st[i]),
                     "pthread_create");
         }
 
@@ -156,17 +146,21 @@ int main(int argc, char *argv[])
         }
         
         pthread_mutex_lock(&mut_state);
+        
+        debug("remaining: %llu", (unsigned long long) to_fact.num);
 
         for (factor_t * it = list_begin(waiting_list);
                 it != list_end(waiting_list);
                 ++it)
         {
+            //debug("start dividing other");
             check(to_fact.num != 0, "factor equal to 0");
             while (it->num % to_fact.num == 0)
             {
                 it->num /= to_fact.num;
                 to_fact.occur++;
             }
+            //debug("stop dividing other");
             
             // If the number is now 1, remove it from the waiting list
             if (it->num == 1)
@@ -178,6 +172,7 @@ int main(int argc, char *argv[])
             }
         }
 
+        //debug("hey here");
         if (reader_count == 0)
         {
             if (to_fact.occur == 1)
@@ -192,11 +187,15 @@ int main(int argc, char *argv[])
             fprintf(stderr, msg, to_fact.num);
             list_push(factor_list, to_fact);
         }
+        //debug("hey there");
 
         pthread_mutex_unlock(&mut_state);
     } 
 
+    free(readers);
+    free(readers_st);
     free(factorizers);
+    free(factorizers_st);
 
     check(!sem_destroy(&sem_full),
             "sem_destroy");
