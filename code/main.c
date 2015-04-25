@@ -85,8 +85,9 @@ int main(int argc, char *argv[])
         {
             debug("spawning file reader thread...");
 
-            check((readers_st[i].stream = fopen(argv[i], "r")) != NULL,
-                    "fopen");
+            if ((readers_st[i].stream = fopen(argv[i], "r")) == NULL)
+                continue;
+
             readers_st[i].filename = argv[i];
 
             check(!pthread_create(&readers[i], NULL, &reader, &readers_st[i]),

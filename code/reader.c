@@ -62,7 +62,6 @@ void *reader(void *arg)
 
     debug("finished reading");
 
-error:
     check(!pthread_mutex_lock(&mut_state),
             "pthread_mutex_lock");
     reader_count--;
@@ -78,9 +77,16 @@ error:
             "pthread_mutex_unlock");
 
     if (st->stream != stdin)
-        fclose(st->stream);
+    {
+        debug("closing stream");
+        check(!fclose(st->stream),
+                "fclose");
+    }
 
     return NULL;
+
+error:
+    exit(EXIT_FAILURE);
 }
 
 void find_prime_with_one_occurrence()
