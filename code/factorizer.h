@@ -1,11 +1,15 @@
 #ifndef _FACTORIZER_H
 #define _FACTORIZER_H
 
+#include <stdint.h>
+
+#include "factor_list.h"
+
+typedef long long ll;
+
 typedef struct
 {
-    factor_list_t *waiting_list;
-    factor_t *to_fact;
-    ll start, step;
+    uint32_t start, step;
 }
 factorizer_starting_state_t;
 
