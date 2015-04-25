@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
     check((waiting_list = list_new()) != NULL,
             "list_new");
-    check((factor_list = list_new()) != NULL,
+    check((prime_list = list_new()) != NULL,
             "list_new");
 
     pthread_t *readers = (pthread_t *) malloc(argc * sizeof(pthread_t));
@@ -149,45 +149,47 @@ int main(int argc, char *argv[])
         
         debug("remaining: %llu", (unsigned long long) to_fact.num);
 
-        for (factor_t * it = list_begin(waiting_list);
-                it != list_end(waiting_list);
-                ++it)
+        if (to_fact.num > 1)
         {
-            //debug("start dividing other");
-            check(to_fact.num != 0, "factor equal to 0");
-            while (it->num % to_fact.num == 0)
+            for (factor_t * it = list_begin(waiting_list);
+                    it != list_end(waiting_list);
+                    ++it)
             {
-                it->num /= to_fact.num;
-                to_fact.occur++;
+                //debug("start dividing other");
+                check(to_fact.num != 0, "factor equal to 0");
+                while (it->num % to_fact.num == 0)
+                {
+                    it->num /= to_fact.num;
+                    to_fact.occur++;
+                }
+                //debug("stop dividing other");
+                
+                // If the number is now 1, remove it from the waiting list
+                if (it->num == 1)
+                {
+                    list_remove(waiting_list, it);
+                    check(!sem_wait(&sem_full),
+                            "sem_wait");
+                    --it;
+                }
             }
-            //debug("stop dividing other");
-            
-            // If the number is now 1, remove it from the waiting list
-            if (it->num == 1)
-            {
-                list_remove(waiting_list, it);
-                check(!sem_wait(&sem_full),
-                        "sem_wait");
-                --it;
-            }
-        }
 
-        //debug("hey here");
-        if (reader_count == 0)
-        {
-            if (to_fact.occur == 1)
+            //debug("hey here");
+            if (reader_count == 0)
             {
-                found = true;
-                finish(&to_fact);
+                if (to_fact.occur == 1)
+                {
+                    found = true;
+                    finish(&to_fact);
+                }
             }
+            else
+            {
+                debug("adding %llu to the prime list", (unsigned long long) to_fact.num);
+                list_push(prime_list, to_fact);
+            }
+            //debug("hey there");
         }
-        else
-        {
-            const char msg[] = "adding %" PRId64 " to factor list\n";
-            fprintf(stderr, msg, to_fact.num);
-            list_push(factor_list, to_fact);
-        }
-        //debug("hey there");
 
         pthread_mutex_unlock(&mut_state);
     } 

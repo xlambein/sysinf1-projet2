@@ -16,17 +16,28 @@ void *factorize(void *starting_state)
         {
             check(!pthread_mutex_lock(&mut_state), "pthread_lock_mutex");
             {
-                if (to_fact.num % i == 0)
+                int occur = 0;
+                while (to_fact.num % i == 0)
                 {
-                    debug("dividing by %llu", (unsigned long long) i);
+                    to_fact.num /= i;
+                    occur++;
+                }
+                if (occur > 0)
+                {
+                    debug("dividing by %llu, %d times", (ull) i, occur);
+                    
                     factor_t factor_found;
                     factor_found.num = i;
-                    factor_found.occur = 1;
+                    factor_found.occur = occur;
                     factor_found.filename = to_fact.filename;
                     
                     list_push(waiting_list, factor_found);
-                    to_fact.num /= i;
                     check(!sem_post(&sem_full), "sem_post");
+                }
+                else
+                {
+                    debug("ah darn it was divisible by %llu but now it's %llu",
+                            (ull) i, (ull) to_fact.num);
                 }
             }
             check(!pthread_mutex_unlock(&mut_state), "pthread_unlock_mutex");

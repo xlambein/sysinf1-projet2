@@ -34,9 +34,9 @@ void *reader(void *arg)
         check(!pthread_mutex_lock(&mut_state),
                 "pthread_mutex_lock");
 
-        // Divide the number by every factor in the factor list
-        for (factor_t * it = list_begin(factor_list);
-                it != list_end(factor_list);
+        // Divide the number by every factor in the prime list
+        for (factor_t * it = list_begin(prime_list);
+                it != list_end(prime_list);
                 ++it)
         {
             check(it->num != 0, "factor equal to 0");
@@ -57,7 +57,7 @@ void *reader(void *arg)
                 "pthread_mutex_unlock");
     }
 
-    //debug("finished reading");
+    debug("finished reading");
 
 error:
     check(!pthread_mutex_lock(&mut_state),
@@ -68,7 +68,7 @@ error:
     if (reader_count == 0)
     {
         find_prime_with_one_occurrence();
-        list_free(factor_list);
+        list_free(prime_list);
     }
     
     check(!pthread_mutex_unlock(&mut_state),
@@ -82,13 +82,13 @@ error:
 
 void find_prime_with_one_occurrence()
 {
-    for (int i = 0; i < factor_list->size; i++)
+    for (int i = 0; i < prime_list->size; i++)
     {
-        if (factor_list->list[i].occur == 1)
+        if (prime_list->list[i].occur == 1)
         {
             found = true;
             to_fact.num = 1; // This will stop the factorizer threads
-            finish(&factor_list->list[i]);
+            finish(&prime_list->list[i]);
             break;
         }
     }
