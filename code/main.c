@@ -38,6 +38,12 @@ int main(int argc, char *argv[])
 
     pthread_t *readers = (pthread_t *) malloc(argc * sizeof(pthread_t));
     check_mem(readers != NULL);
+
+    bool *active_readers = (bool *) malloc(argc * sizeof(bool));
+    check_mem(active_readers != NULL);
+    for (int i = 0; i < argc; i++)
+        active_readers[i] = false;
+
     reader_starting_state_t *readers_st = (reader_starting_state_t *) malloc(argc * sizeof(reader_starting_state_t));
     check_mem(readers_st != NULL);
 
@@ -65,6 +71,7 @@ int main(int argc, char *argv[])
 
             check(!pthread_create(&readers[i], NULL, &reader, &readers_st[i]),
                     "pthread_create");
+            active_readers[i] = true;
             reader_count++;
 
             debug("...spawned !");
@@ -194,7 +201,15 @@ int main(int argc, char *argv[])
         pthread_mutex_unlock(&mut_state);
     } 
 
+    for (int i = 0; i < argc; i++)
+    {
+        if (active_readers[i])
+            check(!pthread_join(readers[i], NULL),
+                    "pthread_join");
+    }
+
     free(readers);
+    free(active_readers);
     free(readers_st);
     free(factorizers);
     free(factorizers_st);
