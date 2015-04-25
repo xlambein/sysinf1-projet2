@@ -9,7 +9,7 @@ typedef long long ll;
 
 typedef struct
 {
-    uint32_t start, step;
+    uint64_t start, step;
 }
 factorizer_starting_state_t;
 

@@ -2,6 +2,7 @@
 #include "factor_list.h"
 #include "factorizer.h"
 #include "threads_utils.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -9,7 +10,7 @@ void *factorize(void *starting_state)
 {
     factorizer_starting_state_t *st = (factorizer_starting_state_t *) starting_state;
     
-    for (uint32_t i = st->start; i * i < to_fact.num; i += st->step)
+    for (uint64_t i = st->start; i * i < to_fact.num; i += st->step)
     {
         if (to_fact.num % i == 0)
         {
