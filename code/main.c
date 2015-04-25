@@ -115,17 +115,13 @@ int main(int argc, char *argv[])
         check(!pthread_mutex_lock(&mut_state),
                 "pthread_mutex_lock");
 
-        to_fact.num = UINT64_MAX;
-        factor_t * to_remove = NULL;
+        factor_t * to_remove = list_begin(waiting_list);
         for (factor_t * it = list_begin(waiting_list);
-                it != list_end(waiting_list);
-                ++it)
+                it != list_end(waiting_list); it++)
         {
-            if (it->num <= to_fact.num)
+            if (it->num < to_remove->num)
                 to_remove = it;
         }
-        check(to_remove != NULL,
-                "Couldn't get smallest number from waiting list");
 
         to_fact = *to_remove;
         debug("choosing %llu", (unsigned long long) to_fact.num);
