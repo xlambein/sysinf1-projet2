@@ -5,6 +5,9 @@
 #include <string.h>
 #include <stdbool.h>
 
+//TODO: remove this
+#include <inttypes.h>
+
 #include "dbg.h"
 #include "threads_utils.h"
 #include "factor_list.h"
@@ -33,6 +36,10 @@ int main(int argc, char *argv[])
     check((factor_list = list_new()) != NULL,
             "list_new");
 
+    pthread_t *readers
+        = (pthread_t *) malloc(sizeof(pthread_t)*(argc-1));
+    check_mem(readers != NULL);
+
     // Lock the state mutex to be sure a reader doesn't finish before another
     // is spawned
     check(!pthread_mutex_lock(&mut_state),
@@ -40,15 +47,17 @@ int main(int argc, char *argv[])
 
     for (int i = 1; i < argc; i++)
     {
-        if (strcmp(argv[i], ARGNAME_MAXTHREADS) && i < argc-1)
+        if (strcmp(argv[i], ARGNAME_MAXTHREADS) == 0 && i < argc-1)
         {
+            debug("reading the maxthreads variable...");
             maxthreads = atoi(argv[i+1]);
             i++;
         }
-        else if (!read_from_stdin && strcmp(argv[i], ARGNAME_STDIN))
+        else if (!read_from_stdin && strcmp(argv[i], ARGNAME_STDIN) == 0)
         {
+            debug("spawning a stdin reading thread...");
+
             read_from_stdin = true;
-            pthread_t thread;
 
             reader_starting_state_t * starting_state
                 = (reader_starting_state_t *) malloc(sizeof(reader_starting_state_t));
@@ -57,18 +66,20 @@ int main(int argc, char *argv[])
             starting_state->stream = stdin;
             starting_state->filename = stdin_filename;
 
-            check(!pthread_create(&thread, NULL, &reader, starting_state),
+            check(!pthread_create(&readers[i-1], NULL, &reader, starting_state),
                     "pthread_create");
+            reader_count++;
 
-            //TODO: be sure it's ok to create a thread in a local stack variable
+            debug("...spawned !");
         }
-        else if (strncmp(argv[i], PREFIX_URL, PREFIX_URL_LENGTH))
+        else if (strncmp(argv[i], PREFIX_URL, PREFIX_URL_LENGTH) == 0)
         {
+            debug("spawning a network reading thread...");
             //TODO: spawn a network reading thread
         }
         else
         {
-            pthread_t thread;
+            debug("spawning file reader thread...");
 
             reader_starting_state_t * starting_state
                 = (reader_starting_state_t *) malloc(sizeof(reader_starting_state_t));
@@ -78,10 +89,11 @@ int main(int argc, char *argv[])
                     "fopen");
             starting_state->filename = argv[i];
 
-            check(!pthread_create(&thread, NULL, &reader, starting_state),
+            check(!pthread_create(&readers[i-1], NULL, &reader, starting_state),
                     "pthread_create");
+            reader_count++;
 
-            //TODO: be sure it's ok to create a thread in a local stack variable
+            debug("...spawned !");
         }
     }
 
@@ -94,7 +106,8 @@ int main(int argc, char *argv[])
 
     while (!found)
     {
-        sem_wait(&sem_full);
+        check(!sem_wait(&sem_full),
+                "sem_wait");
 
         // Get smallest number from waiting list
         
@@ -138,7 +151,7 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < maxthreads; i++)
         {
-            check(pthread_join(factorizers[i], NULL),
+            check(!pthread_join(factorizers[i], NULL),
                     "pthread_join");
         }
         
@@ -148,7 +161,8 @@ int main(int argc, char *argv[])
                 it != list_end(waiting_list);
                 ++it)
         {
-            while (it->num % to_fact.num)
+            check(to_fact.num != 0, "factor equal to 0");
+            while (it->num % to_fact.num == 0)
             {
                 it->num /= to_fact.num;
                 to_fact.occur++;
@@ -158,6 +172,8 @@ int main(int argc, char *argv[])
             if (it->num == 1)
             {
                 list_remove(waiting_list, it);
+                check(!sem_wait(&sem_full),
+                        "sem_wait");
                 --it;
             }
         }
@@ -172,6 +188,8 @@ int main(int argc, char *argv[])
         }
         else
         {
+            const char msg[] = "adding %" PRId64 " to factor list\n";
+            fprintf(stderr, msg, to_fact.num);
             list_push(factor_list, to_fact);
         }
 
