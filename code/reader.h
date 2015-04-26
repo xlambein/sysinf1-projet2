@@ -2,6 +2,7 @@
 #define __reader_h__
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "factor_list.h"
 
@@ -15,7 +16,7 @@ reader_starting_state_t;
 
 void *reader(void *arg);
 
-void find_prime_with_one_occurrence();
+bool find_prime_with_one_occurrence();
 
 #endif
 
