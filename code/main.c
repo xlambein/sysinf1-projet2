@@ -4,6 +4,7 @@
 #include <semaphore.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 //TODO: remove this
 #include <inttypes.h>
@@ -12,6 +13,7 @@
 #include "threads_utils.h"
 #include "factor_list.h"
 #include "reader.h"
+#include "curl_getter.h"
 #include "factorizer.h"
 
 #define ARGNAME_MAXTHREADS "-maxthreads"
@@ -79,7 +81,42 @@ int main(int argc, char *argv[])
         else if (strncmp(argv[i], PREFIX_URL, PREFIX_URL_LENGTH) == 0)
         {
             debug("spawning a network reading thread...");
-            //TODO: spawn a network reading thread
+
+            int pipefd[2];
+            check(!pipe(pipefd),
+                    "pipe");
+
+            if ((readers_st[i].stream = fdopen(pipefd[0], "r")) == NULL)
+            {
+                close(pipefd[0]);
+                close(pipefd[1]);
+                continue;
+            }
+
+            readers_st[i].filename = argv[i];
+
+            check(!pthread_create(&readers[i], NULL, &reader, &readers_st[i]),
+                    "pthread_create");
+            active_readers[i] = true;
+            reader_count++;
+
+            // Spawn detached curl_getter thread
+            curl_getter_starting_state_t * curl_getter_st
+                = (curl_getter_starting_state_t *)
+                malloc(sizeof(curl_getter_starting_state_t));
+            check_mem(curl_getter_st != NULL);
+
+            curl_getter_st->url = argv[i];
+            curl_getter_st->fd = pipefd[1];
+
+            pthread_t curl_getter_thread;
+
+            check(!pthread_create(&curl_getter_thread, NULL, &curl_getter, curl_getter_st),
+                    "phtread_create");
+            check(!pthread_detach(curl_getter_thread),
+                    "pthread_detach");
+
+            debug("...spawned !");
         }
         else
         {
@@ -92,6 +129,7 @@ int main(int argc, char *argv[])
 
             check(!pthread_create(&readers[i], NULL, &reader, &readers_st[i]),
                     "pthread_create");
+            active_readers[i] = true;
             reader_count++;
 
             //debug("...spawned !");
@@ -109,6 +147,8 @@ int main(int argc, char *argv[])
     {
         check(!sem_wait(&sem_full),
                 "sem_wait");
+        if (found)
+            break;
 
         // Get smallest number from waiting list
         

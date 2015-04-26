@@ -65,7 +65,11 @@ void *reader(void *arg)
     // If this is the last reader
     if (reader_count == 0)
     {
-        find_prime_with_one_occurrence();
+        if (find_prime_with_one_occurrence())
+        {
+            check(!sem_post(&sem_full),
+                    "sem_post");
+        }
         list_free(prime_list);
     }
     
@@ -85,7 +89,7 @@ error:
     exit(EXIT_FAILURE);
 }
 
-void find_prime_with_one_occurrence()
+bool find_prime_with_one_occurrence()
 {
     for (factor_t *it = list_begin(prime_list); it != list_end(prime_list); it++)
     {
@@ -94,8 +98,11 @@ void find_prime_with_one_occurrence()
             found = true;
             to_fact.num = 1; // This will stop the factorizer threads
             finish(it);
-            break;
+
+            return true;
         }
     }
+
+    return false;
 }
 
