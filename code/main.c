@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         }
         else if (!read_from_stdin && strcmp(argv[i], ARGNAME_STDIN) == 0)
         {
-            debug("spawning a stdin reading thread...");
+            //debug("spawning a stdin reading thread...");
 
             read_from_stdin = true;
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
             active_readers[i] = true;
             reader_count++;
 
-            debug("...spawned !");
+            //debug("...spawned !");
         }
         else if (strncmp(argv[i], PREFIX_URL, PREFIX_URL_LENGTH) == 0)
         {
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            debug("spawning file reader thread...");
+            //debug("spawning file reader thread...");
 
             if ((readers_st[i].stream = fopen(argv[i], "r")) == NULL)
                 continue;
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
             active_readers[i] = true;
             reader_count++;
 
-            debug("...spawned !");
+            //debug("...spawned !");
         }
     }
 

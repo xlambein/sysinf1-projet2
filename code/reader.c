@@ -56,7 +56,7 @@ void *reader(void *arg)
                 "pthread_mutex_unlock");
     }
 
-    debug("finished reading");
+    debug("finished reading %s", st->filename);
 
     check(!pthread_mutex_lock(&mut_state),
             "pthread_mutex_lock");
@@ -78,7 +78,7 @@ void *reader(void *arg)
 
     if (st->stream != stdin)
     {
-        debug("closing stream");
+        //debug("closing stream");
         check(!fclose(st->stream),
                 "fclose");
     }
