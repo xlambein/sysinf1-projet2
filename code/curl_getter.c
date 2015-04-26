@@ -42,7 +42,7 @@ size_t write_callback(void *buffer, size_t size, size_t nmemb, void *userp)
  *
  * @returns: NULL
  * 
- * Note: at the end of the function, arg is freed and fg is closed.
+ * Note: at the end of the function, fg is closed.
  */
 void *curl_getter(void *arg)
 {
@@ -52,8 +52,9 @@ void *curl_getter(void *arg)
     debug("curling \"%s\"...", st->url);
 
     // Initialize the curl handler
-    CURL *curl_handle = NULL;
-    curl_handle = curl_easy_init();
+    CURL *curl_handle = curl_easy_init();
+    check(curl_handle != NULL,
+            "curl_easy_init");
 
     // Set the URL and the HTTP method
     curl_easy_setopt(curl_handle, CURLOPT_URL, st->url);
@@ -74,10 +75,10 @@ void *curl_getter(void *arg)
     // Clean up everything
     curl_easy_cleanup(curl_handle);
     close(st->fd);
-    free(st);
 
     debug("curling \"%s\" done", st->url);
 
+error:
     return NULL;
 }
 
