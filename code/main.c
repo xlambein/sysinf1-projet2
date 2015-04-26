@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
 
             check(!pthread_create(&readers[i], NULL, &reader, &readers_st[i]),
                     "pthread_create");
+            active_readers[i] = true;
             reader_count++;
 
             debug("...spawned !");
