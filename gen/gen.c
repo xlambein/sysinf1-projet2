@@ -14,9 +14,9 @@
 #define FILENAME_SIZE 100
 #define FILENUM_SIZE 5
 
-#define DEFAULT_FILECOUNT 4
+#define DEFAULT_FILECOUNT 1
 #define DEFAULT_NUMCOUNT 100
-#define DEFAULT_PRIMECOUNT 50
+#define DEFAULT_PRIMECOUNT 100
 #define DEFAULT_PRIMEMAX 0x100000000L
 #define DEFAULT_NUMMAX 0xffffffffffffffffL
 
@@ -25,6 +25,7 @@
 #define ARGNAME_PRIMECOUNT "--prime-count"
 #define ARGNAME_PRIMEMAX "--prime-max"
 #define ARGNAME_NUMMAX "--num-max"
+#define ARGNAME_HARDER "--harder"
 #define ARGNAME_DEBUG "--debug"
 
 int small_primes_num = 0;
@@ -140,16 +141,22 @@ void write_numbers(uint64_t *numbers, int num_count, char *path, int file_count)
 
 void help()
 {
-    printf("Usage: ./gen PATH [--file-count FILECOUNT] [--num-count NUMCOUNT --prime-count PRIMECOUNT] [--prime-max PRIMEMAX] [--num-max NUMMAX] [--debug]\n");
-    printf("Limitations:\n");
+    printf("Usage: ./gen PATH [--file-count FILECOUNT] [--num-count NUMCOUNT --prime-count PRIMECOUNT] [--prime-max PRIMEMAX] [--num-max NUMMAX] [--harder] [--debug]\n");
+    printf("Some limitations:\n");
     printf("- NUMCOUNT may not be smaller than PRIMECOUNT\n");
     printf("- PRIMECOUNT must be at least 2\n");
     printf("- there must be at least PRIMECOUNT primes smaller than PRIMEMAX\n");
     printf("- NUMMAX must fit in a 64bit unsigned integer\n");
     printf("- the square of PRIMEMAX may not be bigger than NUMMAX\n");
+    printf("- if the --harder option is on, num-count and prime-count must be equal\n");
     printf("- FILECOUNT must be smaller than 10000\n");
     printf("- PATH may not be longer than 50 characters\n");
     exit(EXIT_FAILURE);
+}
+
+int compare(const void *p1, const void *p2)
+{
+    return *(int *) p2 - *(int *) p1;
 }
 
 int main(int argc, char *argv[])
@@ -159,6 +166,7 @@ int main(int argc, char *argv[])
             prime_count = DEFAULT_PRIMECOUNT;
     uint64_t prime_max = DEFAULT_PRIMEMAX,
             num_max = DEFAULT_NUMMAX;
+    bool harder = false;
     char *path = NULL;
     
     for (int i = 1; i < argc; i++)
@@ -193,6 +201,10 @@ int main(int argc, char *argv[])
                 help();
             num_max = atoi(argv[i]);
         }
+        else if (strcmp(argv[i], ARGNAME_HARDER) == 0)
+        {
+            harder = true;
+        }
         else if (strcmp(argv[i], ARGNAME_DEBUG) == 0)
         {
             debug = true;
@@ -210,6 +222,8 @@ int main(int argc, char *argv[])
     gen_small_primes();
     srand(time(NULL));
     uint64_t *primes = random_primes(prime_count, prime_max);
+    if (harder)
+        qsort(primes, prime_count, sizeof(uint64_t), compare);
     if (debug)
     {
         printf("Generated primes:\n");
@@ -225,7 +239,10 @@ int main(int argc, char *argv[])
         int j = (i - 1) % (prime_count - 1) + 1;
         base_factors[i] = primes[j];
     }
-    shuffle(base_factors, 2 * num_count);
+    if (harder)
+        qsort(base_factors, 2 * num_count, sizeof(uint64_t), compare);
+    else
+        shuffle(base_factors, 2 * num_count);
     
     int sol_file;
     for (int i = 0; i < 2 * num_count; i++)
@@ -238,8 +255,11 @@ int main(int argc, char *argv[])
     for (int i = 0; i < num_count; i++)
     {
         final_numbers[i] = base_factors[2*i] * base_factors[2*i+1];
-        while (final_numbers[i] <= num_max / prime_max)
-            final_numbers[i] *= primes[rand() % (prime_count - 1) + 1];
+        if (!harder)
+        {
+            while (final_numbers[i] <= num_max / prime_max)
+                final_numbers[i] *= primes[rand() % (prime_count - 1) + 1];
+        }
     }
     
     write_numbers(final_numbers, num_count, path, file_count);
