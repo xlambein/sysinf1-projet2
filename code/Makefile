@@ -1,6 +1,6 @@
 CC=gcc -std=gnu99
 CFLAGS=-W -Wall
-LDFLAGS=-lpthread
+LDFLAGS=-lpthread -lcurl
 EXEC=project2
 SRC= $(wildcard *.c)
 OBJ= $(SRC:.c=.o)
