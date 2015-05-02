@@ -10,32 +10,44 @@ void *factorize(void *starting_state)
 {
     factorizer_starting_state_t *st = (factorizer_starting_state_t *) starting_state;
     
-    for (uint64_t i = st->start; i * i <= to_fact.num; i += st->step)
+    return NULL; // TODO: REMOVE THIS FOR FUCK'S SAKE
+    while (true)
     {
-        if (to_fact.num % i == 0)
+        check(!sem_wait(&sem_start), "sem_wait");
+        if (to_fact.num == 0)
+            return NULL;
+        
+        for (uint64_t i = st->start; i * i <= to_fact.num; i += st->step)
         {
-            check(!pthread_mutex_lock(&mut_state), "pthread_lock_mutex");
+            if (to_fact.num % i == 0)
             {
-                factor_t factor_found = {i, 0, to_fact.filename};
-                divide_as_much_as_possible(&to_fact, &factor_found);
-                
-                if (factor_found.occur > 0)
+                check(!pthread_mutex_lock(&mut_state), "pthread_lock_mutex");
                 {
-                    debug("dividing by %llu, %d times", (ull) i, factor_found.occur);
+                    factor_t factor_found = {i, 0, to_fact.filename};
+                    divide_as_much_as_possible(&to_fact, &factor_found);
                     
-                    list_push(waiting_list, factor_found);
-                    check(!sem_post(&sem_full), "sem_post");
+                    if (factor_found.occur > 0)
+                    {
+                        debug("dividing by %llu, %d times", (ull) i, factor_found.occur);
+                        
+                        list_push(waiting_list, factor_found);
+                        check(!sem_post(&sem_full), "sem_post");
+                    }
                 }
-                else
-                {
-                    debug("ah darn it was divisible by %llu but now it's %llu",
-                            (ull) i, (ull) to_fact.num);
-                }
+                check(!pthread_mutex_unlock(&mut_state), "pthread_unlock_mutex");
             }
-            check(!pthread_mutex_unlock(&mut_state), "pthread_unlock_mutex");
         }
+        
+        check(!pthread_mutex_lock(&mut_factorizers), "pthread_lock_mutex");
+        {
+            factorizer_count--;
+            if (factorizer_count == 0)
+            {
+                check(!sem_post(&sem_finish), "sem_post");
+            }
+        }
+        check(!pthread_mutex_unlock(&mut_factorizers), "pthread_unlock_mutex");
     }
-    return NULL;
 error:
     exit(EXIT_FAILURE);
 }

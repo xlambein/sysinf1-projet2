@@ -28,10 +28,11 @@ int main(int argc, char *argv[])
     bool read_from_stdin = false;
     char stdin_filename[] = STDIN_FILENAME;
 
-    check(!sem_init(&sem_full, 0, 0),
-            "sem_init");
-    check(!pthread_mutex_init(&mut_state, NULL),
-            "pthread_mutex_init");
+    check(!sem_init(&sem_full, 0, 0), "sem_init");
+    check(!sem_init(&sem_start, 0, 0), "sem_init");
+    check(!sem_init(&sem_finish, 0, 0), "sem_init");
+    check(!pthread_mutex_init(&mut_state, NULL), "pthread_mutex_init");
+    check(!pthread_mutex_init(&mut_factorizers, NULL), "pthread_mutex_init");
 
     check((waiting_list = list_new()) != NULL,
             "list_new");
@@ -142,6 +143,13 @@ int main(int argc, char *argv[])
     pthread_t *factorizers = (pthread_t *) malloc(maxthreads * sizeof(pthread_t));
     check_mem(factorizers != NULL);
     factorizer_starting_state_t *factorizers_st = (factorizer_starting_state_t *) malloc(maxthreads * sizeof(factorizer_starting_state_t));
+    
+    // Spawn the factorizer threads
+    for (int i = 0; i < maxthreads; i++)
+    {
+        check(!pthread_create(&factorizers[i], NULL, &factorize, &factorizers_st[i]),
+                "pthread_create");
+    }
 
     while (!found)
     {
@@ -170,24 +178,20 @@ int main(int argc, char *argv[])
         check(!pthread_mutex_unlock(&mut_state),
                 "pthread_mutex_unlock");
 
-        // Spawn the factorizer threads
-
+        // Restart the factorizer threads
+        factorizer_count = maxthreads;
         for (int i = 0; i < maxthreads; i++)
         {
             factorizers_st[i].start = 2+i;
             factorizers_st[i].step = maxthreads;
-
-            check(!pthread_create(&factorizers[i], NULL, &factorize, &factorizers_st[i]),
-                    "pthread_create");
         }
-
-        // Join the factorizer threads
-
         for (int i = 0; i < maxthreads; i++)
         {
-            check(!pthread_join(factorizers[i], NULL),
-                    "pthread_join");
+            check(!sem_post(&sem_start), "sem_post");
         }
+        
+        // Wait for the factorizer threads
+        check(!sem_wait(&sem_start), "sem_wait");
         
         pthread_mutex_lock(&mut_state);
         
@@ -232,13 +236,25 @@ int main(int argc, char *argv[])
         }
 
         pthread_mutex_unlock(&mut_state);
-    } 
+    }
 
     for (int i = 0; i < argc; i++)
     {
         if (active_readers[i])
             check(!pthread_join(readers[i], NULL),
                     "pthread_join");
+    }
+    
+    // Join the factorizer threads
+    to_fact.num = 0;
+    for (int i = 0; i < maxthreads; i++)
+    {
+        check(!sem_post(&sem_start), "sem_post");
+    }
+    for (int i = 0; i < maxthreads; i++)
+    {
+        check(!pthread_join(factorizers[i], NULL),
+                "pthread_join");
     }
 
     free(readers);

@@ -3,13 +3,12 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-sem_t sem_full;
-pthread_mutex_t mut_state;
+sem_t sem_full, sem_start, sem_finish;
+pthread_mutex_t mut_state, mut_factorizers;
 bool found = false;
 factor_t to_fact = {0, 0, NULL};
-factor_list_t * waiting_list,
-       * prime_list;
-int reader_count = 0;
+factor_list_t *waiting_list, *prime_list;
+int reader_count = 0, factorizer_count = 0;
 
 void finish(const factor_t * factor)
 {

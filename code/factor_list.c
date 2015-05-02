@@ -36,6 +36,7 @@ void list_push(factor_list_t *list, factor_t factor)
     // If there is not enough space
     if (list->size == list->cont_size)
     {
+        // TODO: use ralloc
         // Double the size
         list->cont_size = 2 * list->size;
         
