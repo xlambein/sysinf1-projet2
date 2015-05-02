@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <curl/curl.h>
 
 //TODO: remove this
 #include <inttypes.h>
@@ -49,6 +50,14 @@ int main(int argc, char *argv[])
 
     reader_starting_state_t *readers_st = (reader_starting_state_t *) malloc(argc * sizeof(reader_starting_state_t));
     check_mem(readers_st != NULL);
+
+    curl_getter_starting_state_t * curl_getters_st
+        = (curl_getter_starting_state_t *)
+        malloc(argc * sizeof(curl_getter_starting_state_t));
+    check_mem(curl_getters_st != NULL);
+
+    // Initialize curl
+    curl_global_init(CURL_GLOBAL_ALL);
 
     // Lock the state mutex to be sure a reader doesn't finish before another
     // is spawned
@@ -102,17 +111,13 @@ int main(int argc, char *argv[])
             reader_count++;
 
             // Spawn detached curl_getter thread
-            curl_getter_starting_state_t * curl_getter_st
-                = (curl_getter_starting_state_t *)
-                malloc(sizeof(curl_getter_starting_state_t));
-            check_mem(curl_getter_st != NULL);
-
-            curl_getter_st->url = argv[i];
-            curl_getter_st->fd = pipefd[1];
+            curl_getters_st[i].url = argv[i];
+            curl_getters_st[i].fd = pipefd[1];
 
             pthread_t curl_getter_thread;
 
-            check(!pthread_create(&curl_getter_thread, NULL, &curl_getter, curl_getter_st),
+            check(!pthread_create(&curl_getter_thread, NULL,
+                        &curl_getter, &curl_getters_st[i]),
                     "phtread_create");
             check(!pthread_detach(curl_getter_thread),
                     "pthread_detach");
@@ -257,6 +262,10 @@ int main(int argc, char *argv[])
                 "pthread_join");
     }
 
+    // Cleanup curl
+    curl_global_cleanup();
+
+    free(curl_getters_st);
     free(readers);
     free(active_readers);
     free(readers_st);
