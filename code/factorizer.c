@@ -10,10 +10,13 @@ void *factorize(void *starting_state)
 {
     factorizer_starting_state_t *st = (factorizer_starting_state_t *) starting_state;
     
-    return NULL; // TODO: REMOVE THIS FOR FUCK'S SAKE
     while (true)
     {
+        // Wait for the start signal
         check(!sem_wait(&sem_start), "sem_wait");
+        check(!sem_post(&sem_start), "sem_wait");
+        
+        // Finish thread if the sentinel value is set
         if (to_fact.num == 0)
             return NULL;
         
@@ -38,15 +41,27 @@ void *factorize(void *starting_state)
             }
         }
         
+        // Counting the threads that have finished
         check(!pthread_mutex_lock(&mut_factorizers), "pthread_lock_mutex");
+        factorizer_meeting++;
+        if (factorizer_meeting == maxthreads)
         {
-            factorizer_count--;
-            if (factorizer_count == 0)
-            {
-                check(!sem_post(&sem_finish), "sem_post");
-            }
+            check(!sem_wait(&sem_start), "sem_wait");
+            check(!sem_post(&sem_handshake), "sem_post");
         }
         check(!pthread_mutex_unlock(&mut_factorizers), "pthread_unlock_mutex");
+        
+        // Shaking hands once everybody has finished
+        check(!sem_wait(&sem_handshake), "sem_wait");
+        factorizer_meeting--;
+        if (factorizer_meeting == 0)
+        {
+            check(!sem_post(&sem_finish), "sem_post");
+        }
+        else
+        {
+            check(!sem_post(&sem_handshake), "sem_post");
+        }
     }
 error:
     exit(EXIT_FAILURE);

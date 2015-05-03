@@ -25,13 +25,13 @@
 
 int main(int argc, char *argv[])
 {
-    int maxthreads = 1;
     bool read_from_stdin = false;
     char stdin_filename[] = STDIN_FILENAME;
 
     check(!sem_init(&sem_full, 0, 0), "sem_init");
     check(!sem_init(&sem_start, 0, 0), "sem_init");
     check(!sem_init(&sem_finish, 0, 0), "sem_init");
+    check(!sem_init(&sem_handshake, 0, 0), "sem_init");
     check(!pthread_mutex_init(&mut_state, NULL), "pthread_mutex_init");
     check(!pthread_mutex_init(&mut_factorizers, NULL), "pthread_mutex_init");
 
@@ -184,19 +184,15 @@ int main(int argc, char *argv[])
                 "pthread_mutex_unlock");
 
         // Restart the factorizer threads
-        factorizer_count = maxthreads;
         for (int i = 0; i < maxthreads; i++)
         {
             factorizers_st[i].start = 2+i;
             factorizers_st[i].step = maxthreads;
         }
-        for (int i = 0; i < maxthreads; i++)
-        {
-            check(!sem_post(&sem_start), "sem_post");
-        }
+        check(!sem_post(&sem_start), "sem_post");
         
         // Wait for the factorizer threads
-        check(!sem_wait(&sem_start), "sem_wait");
+        check(!sem_wait(&sem_finish), "sem_wait");
         
         pthread_mutex_lock(&mut_state);
         
@@ -252,10 +248,7 @@ int main(int argc, char *argv[])
     
     // Join the factorizer threads
     to_fact.num = 0;
-    for (int i = 0; i < maxthreads; i++)
-    {
-        check(!sem_post(&sem_start), "sem_post");
-    }
+    check(!sem_post(&sem_start), "sem_post");
     for (int i = 0; i < maxthreads; i++)
     {
         check(!pthread_join(factorizers[i], NULL),
