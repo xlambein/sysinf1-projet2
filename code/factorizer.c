@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-void *factorize(void *starting_state)
+void *factorizer(void *starting_state)
 {
     factorizer_starting_state_t *st = (factorizer_starting_state_t *) starting_state;
     
