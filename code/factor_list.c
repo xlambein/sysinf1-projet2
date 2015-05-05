@@ -1,9 +1,14 @@
-#include "dbg.h"
 #include "factor_list.h"
 #include <stdlib.h>
 
 #define STARTING_SIZE 32
 
+/**
+ * Allocates a new factor_list_t and its inner array with a size of
+ * STARTING_SIZE.
+ *
+ * @returns: a pointer to the list.
+ */
 factor_list_t *list_new()
 {
     // Allocate the structure
@@ -23,6 +28,11 @@ factor_list_t *list_new()
     return list;
 }
 
+/**
+ * Frees the memory allocated by a factor_list_t and its inner array.
+ *
+ * @list a pointer to the factor_list_t
+ */
 void list_free(factor_list_t *list)
 {
     // Free the internal list then the structure
@@ -30,9 +40,15 @@ void list_free(factor_list_t *list)
     free(list);
 }
 
+/**
+ * Adds a factor to a facto_list_t, doubling the size of its inner array if
+ * necessary.
+ *
+ * @list a pointer to the factor_list_t
+ * @factor the factor to add
+ */
 void list_push(factor_list_t *list, factor_t factor)
 {
-    //debug("adding %llu to the list", (unsigned long long) factor.num);
     // If there is not enough space
     if (list->size == list->cont_size)
     {
@@ -55,6 +71,13 @@ void list_push(factor_list_t *list, factor_t factor)
     list->size++;
 }
 
+/**
+ * Removes a factor from a facto_list_t by moving it to the end of the list
+ * and then reducing its size.
+ *
+ * @list a pointer to the factor_list_t
+ * @to_remove the factor to remove
+ */
 void list_remove(factor_list_t *list, factor_t *to_remove)
 {
     // Decrease the size
@@ -64,11 +87,28 @@ void list_remove(factor_list_t *list, factor_t *to_remove)
     *to_remove = *list_end(list);
 }
 
+/**
+ * Returns a pointer to the first element of a factor_list_t's inner array,
+ * used for list traversal.
+ *
+ * @list a pointer to the factor_list_t
+ *
+ * @returns: a pointer to the first element of a factor_list_t's inner array.
+ */
 factor_t *list_begin(factor_list_t *list)
 {
     return list->list;
 }
 
+/**
+ * Returns a pointer to the address right after the last element of a
+ * factor_list_t's inner array, used for list traversal.
+ *
+ * @list a pointer to the factor_list_t
+ *
+ * @returns: a pointer to the address right after the last element of a
+ * factor_list_t's inner array.
+ */
 factor_t *list_end(factor_list_t *list)
 {
     return list->list + list->size;
