@@ -24,6 +24,54 @@
 
 \texttt{TL;DR.} Nous avons choisi l'algorithme de divisions successives, sur lequel nous lançons plusieurs threads qui testent la division avec des valeurs de départ décalées.
 
+\subsection*{Fonctionnement du programme}
+
+Notre programme se décompose en trois parties différentes, qui possèdent leur fonction propre: la boucle principale, les \emph{readers} et les \emph{factorizers}. Les \emph{readers} sont des threads servant à lire des entiers depuis les entrées pour les placer dans une liste interne; les \emph{factorizers} sont des threads parcourant un entier pour en trouver les facteurs; enfin, la boucle principale sert à synchroniser les \emph{factorizers} pour changer l'entier courant à factoriser \texttt{to\_fact} et éventuellement terminer le programme.
+
+Ces parties partagent deux listes d'entiers qui sont la \emph{waiting list} et la \emph{prime list}. La première contient tous les nombres à factoriser. Elle possède deux entrées: les \emph{readers}, évidemment, mais aussi les \emph{factorizers}, comme nous allons le voir plus loin.
+
+La seconde contient tous les facteurs premiers trouvés, et n'est utilisée que temporairement, tant qu'il reste des \emph{readers} actifs. En effet, tant que tous les nombres n'ont pas été lus, il est impossible d'être certain que ces facteurs ne sont pas solution, et il est donc nécessaire de les garder. Cette liste ne possède qu'une seule entrée, et il s'agit de la boucle principale.
+
+Chaque nombre stocké dans \emph{waiting list} et dans la \emph{prime list} transporte également deux informations: le fichier d'où il provient et son nombre d'occurrences, c'est-à-dire, s'il s'agit d'un facteur (premier ou non), le nombre de fois qu'il apparaît (divise un nombre). Cela est nécessaire pour vérifier si le facteur est une solution.
+
+Dans la suite, nous allons expliquer en détail le fonctionnement de chaque partie.
+
+\subsubsection*{Les factorizers}
+
+Tous les \emph{factorizers} partagent une même variable globale \texttt{to\_fact}, le nombre qu'ils sont en train de factoriser. Ceux-ci parcourent tous les entiers de 2 à $\sqrt{\texttt{to\_fact}}$, en vérifiant à chaque fois si l'entier en question divise \texttt{to\_fact}. Si c'est le cas, un facteur (pas nécessairement premier) a été trouvé, et la variable globale \texttt{to\_fact} est effectivement divisée par celui-ci, autant de fois que possible. Ensuite, le facteur est ajouté à la \emph{waiting list}, en notant son nombre d'occurrences---ici le nombre de fois qu'il a divisé \texttt{to\_fact}---, puis les \emph{factorizers} continuent leur travail.
+
+Bien évidemment, les différents threads ne parcourent pas chacun tous les nombres entre 2 à $\sqrt{\texttt{to\_fact}}$. Ceux-ci se répartissent le travail: le premier thread itérant sur $i=2,2+n,2+2n,\dots$; le second thread itérant sur $i=3,3+n,3+2n,\dots$; etc. Si ce n'était pas le cas, augmenter le nombre de threads n'aurait strictement aucun intérêt!
+
+Lorsque tous les \emph{factorizers} ont dépassé $\sqrt{\texttt{to\_fact}}$, ceux-ci attendent que la boucle principale choisisse un nouvel entier à placer dans \texttt{to\_fact}, puis recommencent leur travail.
+
+\subsubsection*{La boucle principale}
+
+Il est important de noter que la valeur de \texttt{to\_fact}, une fois que les \emph{factorizers} ont terminé leur travail, est un facteur premier du nombre initial. %TODO: maybe add a drafty proof
+
+Le rôle de la boucle principal est double: tout d'abord, elle va récupérer ce facteur premier et le traiter; ensuite, si la solution n'a pas encore été trouvée, elle va choisir un nouvel entier de la \emph{waiting list} et le placer dans la variable \texttt{to\_fact} avant de relancer les \emph{factorizers}.
+
+\paragraph{Traitement du facteur}
+Si celui-ci n'est pas 1, alors la boucle principale va parcourir chaque entier de la \emph{waiting list} et diviser celui-ci par le facteur. Ensuite, deux situations sont possibles:
+\begin{itemize}
+    \item les \emph{readers} n'ont pas fini de lire les fichiers; dans ce cas, le facteur est simplement ajouté à la \emph{prime list}, en prenant soin de noter le nombre de fois qu'il a divisé un nombre de la \emph{waiting list} dans son nombre d'occurrences;
+    \item les \emph{readers} ont terminé leur lecture; dans ce cas, si le facteur n'a divisé aucun nombre de la \emph{waiting list}, il s'agit de la solution, et le programme termine.
+\end{itemize}
+
+\paragraph{Choix d'un nouvel entier}
+Si la solution n'a pas été trouvée, un nouvel entier est choisi pour \texttt{to\_fact}: il s'agit du plus petit entier de la \emph{waiting list}, trouvé en faisant une simple recherche en $\mathcal{O}(n)$.
+
+\subsubsection*{Les readers}
+
+Les \emph{readers} sont des threads génériques qui lisent des entiers au format BigEndian depuis \emph{file descriptor} et placent ceux-ci dans la waiting list. Leur fonctionnement exact est en vérité un peu plus complexe que cela.
+
+Pour chaque nombre lu, un \emph{reader} va parcourir la \emph{prime list} et diviser le nombre par chaque facteur premier autant de fois que possible, en mettant à jour le nombre de fois que ce facteur a divisé. Cela est nécessaire car les nombres lus n'ont pas eu l'occasion d'être divisés par la boucle principale lors du traitement du facteur.
+
+C'est là la seule raison d'existence de la \emph{prime list}---et celle-ci est d'ailleurs détruite lorsque le dernier \emph{reader} a terminé son travail. Avant de la désallouer, cependant, le dernier \emph{reader} la parcours une dernière fois: en effet, si l'un des facteurs a un nombre d'occurrences de 1, alors il s'agit de la solution et le programme doit se terminer.
+
+
+\newpage
+\section*{Trucs vieux :D}
+
 \subsection*{Déroulement}
 
 Nous commençons par lire tous les entiers à factoriser et nous les plaçons dans un heap (dans l'ordre inversé, avec le plus petit au-dessus). Ensuite, tant que le heap n'est pas vide, nous enlevons le plus petit entier du heap et nous lançons dessus les $n$ threads à notre disposition. Dès qu'ils trouvent un facteur, ils l'ajoutent au heap et divisent la valeur à factoriser.
@@ -40,7 +88,7 @@ Les $n$ threads recherchent des facteurs du nombre courant \texttt{toFact} en pa
 
 Voici le pseudocode pour les threads de recherche de facteurs:
 
-\lstinputlisting{nththread}
+\lstinputlisting{factorizer}
 
 \subsection*{Synchronisation des threads}
 
