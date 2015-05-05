@@ -1,0 +1,19 @@
+while true:
+    wait start
+    post start
+    
+    factorisation...
+    
+    lock mutex
+        num_waiting++
+        if num_waiting == num_factorizers:
+            wait start
+            post handshake
+    unlock mutex
+    
+    wait handshake
+    num_waiting--
+    if num_waiting == 0:
+        post finish
+    else:
+        post handshake

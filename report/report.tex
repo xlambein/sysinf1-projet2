@@ -68,6 +68,23 @@ Pour chaque nombre lu, un \emph{reader} va parcourir la \emph{prime list} et div
 
 C'est là la seule raison d'existence de la \emph{prime list}---et celle-ci est d'ailleurs détruite lorsque le dernier \emph{reader} a terminé son travail. Avant de la désallouer, cependant, le dernier \emph{reader} la parcours une dernière fois: en effet, si l'un des facteurs a un nombre d'occurrences de 1, alors il s'agit de la solution et le programme doit se terminer.
 
+\subsection*{Mécanismes de synchronisation}
+
+\subsubsection*{Commande des factorizers}
+
+Puisque la parallélisation de la factorisation est interne, il faut que les \emph{factorizers} se synchronisent avec la boucle principale qui va choisir les nombres à factoriser un par un. La boucle principale va envoyer un signal aux factorizers pour qu'ils commencent à factoriser, ce qu'ils vont faire, puis ils vont attendre qu'eux tous aient fini avant d'envoyer un signal à la boucle principale et d'attendre le prochain nombre à factoriser.
+
+La solution que nous avons développée est une extension du problème du rendez-vous, et se présente ainsi:
+\lstinputlisting{factorizer-synchro}
+
+On retrouve tout à fait ci-dessus l'algorithme classique du problème du rendez-vous, géré par la mutex \texttt{mutex} et le sémaphore \texttt{handshake}, mais des ajouts ont été faits pour gérér l'échange entre la boucle principale et les \emph{factorizers}. Nous allons commenter les lignes que nous avons ajoutées:
+\begin{itemize}
+    \item Lignes 2 et 3: avant de commencer à factoriser, le \emph{factorizer} attend le message envoyé par la boucle principale via le sémaphore \texttt{start} et le transmet au \emph{factorizer} suivant. De cette manière, la boucle principale ne doit envoyer ce message qu'une seule fois.
+    \item Ligne 10: quand tous les \emph{factorizers} sont arrivés au bout de leur factorisation, on en profite pour décrémenter le sémaphore \texttt{start} que le dernier \emph{factorizer} à entrer avait posté en ligne 3 sans que personne ne l'attende. Il est important que cette opération se fasse à cet endroit précis pour éviter qu'un factorizer ne soit libéré par l'incrémentation du sémaphore \texttt{handshake} et ne commence sans attendre le signal de la boucle principale.
+    \item Lignes 15 à 17: tous les \emph{factorizers} passant la barrière vont avoir le même comportement que pour le problème de rendez-vous classique sauf le dernier qui à la place d'incrémenter \texttt{handshake} va incrémenter \texttt{finish} pour signaler à la boucle principale que tous les \emph{factorizers} ont fini et sont prêts à recevoir un nouveau incrément de \texttt{start} en ligne 2.
+\end{itemize}
+
+Il suffit ensuite à la boucle principale de poster \texttt{start} puis d'attendre \texttt{finish} dès qu'elle veut lancer les threads sur un nombre.
 
 \newpage
 \section*{Trucs vieux :D}
