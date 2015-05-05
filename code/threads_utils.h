@@ -19,7 +19,7 @@ extern int num_factorizers, readers_active, factorizer_meeting;
 int start_timer();
 int stop_timer(double * delta);
 
-void finish(const factor_t *factor);
+void print_solution(const factor_t *factor);
 void divide_as_much_as_possible(factor_t *to_divide, factor_t *divisor);
 
 #endif

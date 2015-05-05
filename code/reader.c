@@ -89,7 +89,7 @@ void *reader(void *arg)
                 to_fact.num = 1;
 
                 // Print the answer
-                finish(factor);
+                print_solution(factor);
             }
 
             // The prime list is not useful anymore when there aren't any

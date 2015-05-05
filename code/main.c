@@ -276,7 +276,7 @@ static void main_loop()
                     if (to_fact.occur == 1)
                     {
                         found = true;
-                        finish(&to_fact);
+                        print_solution(&to_fact);
                     }
                 }
                 // Otherwise we add it to the prime list
