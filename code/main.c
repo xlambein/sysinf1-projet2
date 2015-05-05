@@ -11,7 +11,7 @@
 #include <inttypes.h>
 
 #include "dbg.h"
-#include "threads_utils.h"
+#include "util.h"
 #include "factor_list.h"
 #include "reader.h"
 #include "curl_getter.h"

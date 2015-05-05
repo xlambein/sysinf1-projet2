@@ -1,7 +1,7 @@
 #include "dbg.h"
 #include "factor_list.h"
 #include "factorizer.h"
-#include "threads_utils.h"
+#include "util.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdint.h>

@@ -7,7 +7,7 @@
 #include <pthread.h>
 
 #include "dbg.h"
-#include "threads_utils.h"
+#include "util.h"
 
 static factor_t * find_prime_with_one_occurrence();
 
