@@ -265,10 +265,11 @@ int main(int argc, char *argv[])
     free(factorizers);
     free(factorizers_st);
 
-    check(!sem_destroy(&sem_full),
-            "sem_destroy");
-    check(!pthread_mutex_destroy(&mut_state),
-            "pthread_mutex_destroy");
+    check(!sem_destroy(&sem_full), "sem_destroy");
+    check(!sem_destroy(&sem_start), "sem_destroy");
+    check(!sem_destroy(&sem_finish), "sem_destroy");
+    check(!sem_destroy(&sem_handshake), "sem_destroy");
+    check(!pthread_mutex_destroy(&mut_state), "pthread_mutex_destroy");
 
     list_free(waiting_list);
 
