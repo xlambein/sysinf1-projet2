@@ -83,7 +83,7 @@ L'état global, constitué notamment de la \emph{waiting list}, de la \emph{prim
 
 Puisque la parallélisation de la factorisation est interne, il faut que les \emph{factorizers} se synchronisent avec la boucle principale qui va choisir les nombres à factoriser un par un. La boucle principale va envoyer un signal aux factorizers pour qu'ils commencent à factoriser, ce qu'ils vont faire, puis ils vont attendre qu'eux tous aient fini avant d'envoyer un signal à la boucle principale et d'attendre le prochain nombre à factoriser.
 
-La solution que nous avons développée est une extension du problème du rendez-vous, et se présente ainsi:
+La solution que nous avons développée est une extension du problème du rendez-vous, et se présente ainsi (son implémentation se trouve dans le fichier \texttt{factorizer.c}):
 \lstinputlisting{factorizer-synchro}
 
 On retrouve tout à fait ci-dessus l'algorithme classique du problème du rendez-vous, géré par la mutex \texttt{mutex} et le sémaphore \texttt{handshake}, mais des ajouts ont été faits pour gérér l'échange entre la boucle principale et les \emph{factorizers}. Nous allons commenter les lignes que nous avons ajoutées:
