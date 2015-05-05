@@ -74,11 +74,12 @@ C'est là la seule raison d'existence de la \emph{prime list}---et celle-ci est 
 
 Ces deux parties doivent être synchronisées à la manière d'un producteur-consommateur où il n'y aurait qu'un seul consommateur: la boucle principale. Celle-ci attend qu'un \emph{reader} lise un entier et le place dans la \emph{waiting list}, afin de pouvoir le mettre dans \texttt{to\_fact}.
 
-Nous avons donc un sémaphore \texttt{sem\_full}, dont la valeur est égale au nombre d'entiers présents dans la \emph{waiting list}. À chaque fois qu'un \emph{reader} ou un \emph{factorizer} ajoute un entier dans celle-ci, le sémaphore est \texttt{post}é, et à chaque fois que les \emph{factorizers} ont besoin d'un nouvel entier à factoriser, la boucle principale effectue un \texttt{wait} sur ce sémaphore pour s'assurer qu'il peut en effet récupérer un entier de la \emph{waiting list}.
+Nous avons donc un sémaphore \texttt{sem\_full}, dont la valeur est égale au nombre d'entiers présents dans la \emph{waiting list}. À chaque fois qu'un \emph{reader} ou un \emph{factorizer} ajoute un entier dans celle-ci, le sémaphore est posté, et à chaque fois que les \emph{factorizers} ont besoin d'un nouvel entier à factoriser, la boucle principale effectue un wait sur ce sémaphore pour s'assurer qu'il peut en effet récupérer un entier de la \emph{waiting list}.
 
 \subsubsection*{La modification de l'état global}
 
-L'état global, constitué notamment de la \emph{waiting list}, de la \emph{prime list} et de \texttt{to\_fact}, peut être sans risque accédé en lecture mais doit toujours être protégé par une unique mutex lors d'un accès en écriture. Il s'agit de la même mutex pour toutes ces données, car la modification de d'une partie de l'état global a systématiquement un impact sur le reste. 
+L'état global, constitué notamment de la \emph{waiting list}, de la \emph{prime list} et de \texttt{to\_fact}, peut être sans risque accédé en lecture mais doit toujours être protégé par une unique mutex lors d'un accès en écriture. Il s'agit de la même mutex pour toutes ces données, car la modification de d'une partie de l'état global a systématiquement un impact sur le reste.
+
 \subsubsection*{Commande des \emph{factorizers}}
 
 Puisque la parallélisation de la factorisation est interne, il faut que les \emph{factorizers} se synchronisent avec la boucle principale qui va choisir les nombres à factoriser un par un. La boucle principale va envoyer un signal aux factorizers pour qu'ils commencent à factoriser, ce qu'ils vont faire, puis ils vont attendre qu'eux tous aient fini avant d'envoyer un signal à la boucle principale et d'attendre le prochain nombre à factoriser.
