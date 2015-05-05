@@ -8,7 +8,7 @@ pthread_mutex_t mut_state, mut_factorizers;
 bool found = false;
 factor_t to_fact = {0, 0, NULL};
 factor_list_t *waiting_list, *prime_list;
-int maxthreads = 1, reader_count = 0, factorizer_meeting = 0;
+int num_factorizers = 1, readers_active = 0, factorizer_meeting = 0;
 
 void finish(const factor_t * factor)
 {

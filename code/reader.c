@@ -60,10 +60,10 @@ void *reader(void *arg)
 
     check(!pthread_mutex_lock(&mut_state),
             "pthread_mutex_lock");
-    reader_count--;
+    readers_active--;
     
     // If this is the last reader
-    if (reader_count == 0)
+    if (readers_active == 0)
     {
         find_prime_with_one_occurrence();
         list_free(prime_list);
