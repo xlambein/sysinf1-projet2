@@ -1,10 +1,10 @@
+#include <stdint.h>
+#include <stdlib.h>
+
 #include "dbg.h"
 #include "factor_list.h"
 #include "factorizer.h"
 #include "util.h"
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdint.h>
 
 /**
  * Factorizes numbers that are given in its starting state. The factorizers are
