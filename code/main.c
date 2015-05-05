@@ -25,6 +25,9 @@
 
 int main(int argc, char *argv[])
 {
+    // Start the timer
+    start_timer();
+
     bool read_from_stdin = false;
     char stdin_filename[] = STDIN_FILENAME;
 
@@ -274,6 +277,11 @@ int main(int argc, char *argv[])
             "pthread_mutex_destroy");
 
     list_free(waiting_list);
+
+    // Stop timer and print elapsed time
+    double elapsed_time;
+    stop_timer(&elapsed_time);
+    printf("%.3f\n", elapsed_time);
 
     return EXIT_SUCCESS;
 error:
