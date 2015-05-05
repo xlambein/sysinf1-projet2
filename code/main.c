@@ -209,7 +209,7 @@ static void launch_factorizers()
     // Spawn the factorizer threads
     for (int i = 0; i < num_factorizers; i++)
     {
-        check(!pthread_create(&factorizers[i], NULL, &factorize, &factorizers_st[i]),
+        check(!pthread_create(&factorizers[i], NULL, &factorizer, &factorizers_st[i]),
                 "pthread_create");
     }
     

@@ -13,6 +13,6 @@ typedef struct
 }
 factorizer_starting_state_t;
 
-void *factorize(void *starting_state);
+void *factorizer(void *starting_state);
 
 #endif
