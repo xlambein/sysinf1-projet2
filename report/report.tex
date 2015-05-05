@@ -36,7 +36,7 @@ Chaque nombre stocké dans \emph{waiting list} et dans la \emph{prime list} tran
 
 Dans la suite, nous allons expliquer en détail le fonctionnement de chaque partie.
 
-\subsubsection*{Les factorizers}
+\subsubsection*{Les \emph{factorizers}}
 
 Tous les \emph{factorizers} partagent une même variable globale \texttt{to\_fact}, le nombre qu'ils sont en train de factoriser. Ceux-ci parcourent tous les entiers de 2 à $\sqrt{\texttt{to\_fact}}$, en vérifiant à chaque fois si l'entier en question divise \texttt{to\_fact}. Si c'est le cas, un facteur (pas nécessairement premier) a été trouvé, et la variable globale \texttt{to\_fact} est effectivement divisée par celui-ci, autant de fois que possible. Ensuite, le facteur est ajouté à la \emph{waiting list}, en notant son nombre d'occurrences---ici le nombre de fois qu'il a divisé \texttt{to\_fact}---, puis les \emph{factorizers} continuent leur travail.
 
@@ -58,9 +58,9 @@ Si celui-ci n'est pas 1, alors la boucle principale va parcourir chaque entier d
 \end{itemize}
 
 \paragraph{Choix d'un nouvel entier}
-Si la solution n'a pas été trouvée, un nouvel entier est choisi pour \texttt{to\_fact}: il s'agit du plus petit entier de la \emph{waiting list}, trouvé en faisant une simple recherche en $\mathcal{O}(n)$.
+Si la solution n'a pas été trouvée, un nouvel entier est choisi pour \texttt{to\_fact}: il s'agit du plus petit entier de la \emph{waiting list}, trouvé en faisant une simple recherche en $\mathcal{O}(n)$; en effet, la liste n'est pas ordonnée.
 
-\subsubsection*{Les readers}
+\subsubsection*{Les \emph{readers}}
 
 Les \emph{readers} sont des threads génériques qui lisent des entiers au format BigEndian depuis \emph{file descriptor} et placent ceux-ci dans la waiting list. Leur fonctionnement exact est en vérité un peu plus complexe que cela.
 
@@ -70,7 +70,16 @@ C'est là la seule raison d'existence de la \emph{prime list}---et celle-ci est 
 
 \subsection*{Mécanismes de synchronisation}
 
-\subsubsection*{Commande des factorizers}
+\subsubsection*{Les \emph{readers} et la boucle principale}
+
+Ces deux parties doivent être synchronisées à la manière d'un producteur-consommateur où il n'y aurait qu'un seul consommateur: la boucle principale. Celle-ci attend qu'un \emph{reader} lise un entier et le place dans la \emph{waiting list}, afin de pouvoir le mettre dans \texttt{to\_fact}.
+
+Nous avons donc un sémaphore \texttt{sem\_full}, dont la valeur est égale au nombre d'entiers présents dans la \emph{waiting list}. À chaque fois qu'un \emph{reader} ou un \emph{factorizer} ajoute un entier dans celle-ci, le sémaphore est \texttt{post}é, et à chaque fois que les \emph{factorizers} ont besoin d'un nouvel entier à factoriser, la boucle principale effectue un \texttt{wait} sur ce sémaphore pour s'assurer qu'il peut en effet récupérer un entier de la \emph{waiting list}.
+
+\subsubsection*{La modification de l'état global}
+
+L'état global, constitué notamment de la \emph{waiting list}, de la \emph{prime list} et de \texttt{to\_fact}, peut être sans risque accédé en lecture mais doit toujours être protégé par une unique mutex lors d'un accès en écriture. Il s'agit de la même mutex pour toutes ces données, car la modification de d'une partie de l'état global a systématiquement un impact sur le reste. 
+\subsubsection*{Commande des \emph{factorizers}}
 
 Puisque la parallélisation de la factorisation est interne, il faut que les \emph{factorizers} se synchronisent avec la boucle principale qui va choisir les nombres à factoriser un par un. La boucle principale va envoyer un signal aux factorizers pour qu'ils commencent à factoriser, ce qu'ils vont faire, puis ils vont attendre qu'eux tous aient fini avant d'envoyer un signal à la boucle principale et d'attendre le prochain nombre à factoriser.
 
