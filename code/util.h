@@ -16,17 +16,21 @@ typedef unsigned long long ull;
 
 // The semaphore representing the number of elements in the waiting list
 extern sem_t sem_full,
-//TODO
+// The signal sent by the main loop to the factorizers to begin an execution
+// of their factorization loop
              sem_start,
-//TODO
-             sem_finish,
-//TODO
-             sem_handshake;
+// The signal sent by the last factorizer to finish factorizing to initiate
+// the handshaking process; it is forwarded by every factorizer when to allow
+// the next one to pass the barrier
+             sem_handshake,
+// The signal sent by the last factorizer to handshake back to the main loop to
+// indicate all the factorizers have finished and are ready to start back
+             sem_finish;
 
 // The mutex protecting the global state of the program (waiting_list,
-// prime_list, readers_active, to_fact, found, TODO)
+// prime_list, readers_active, to_fact and found)
 extern pthread_mutex_t mut_state,
-//TODO
+// The mutex protecting the number of factorizers at the barrier
                        mut_factorizers;
 
 // Boolean indicating whether a solution was found
@@ -40,11 +44,11 @@ extern factor_list_t *waiting_list,
 // The prime list, containing prime factors computed by the factorizers
                      *prime_list;
 
-//TODO
+// The number of factorizer threads allowed by the command-line argument
 extern int num_factorizers,
 // The number of active reader threads
            readers_active,
-//TODO
+// The number of factorizer currently at the barrier
            factorizer_meeting;
 
 // Starts the timer that measures the execution time of the program

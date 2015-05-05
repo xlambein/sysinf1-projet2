@@ -27,8 +27,7 @@ static factor_t * find_prime_with_one_occurrence();
  */
 void *reader(void *arg)
 {
-    reader_starting_state_t * st
-        = (reader_starting_state_t *) arg;
+    reader_starting_state_t *st = (reader_starting_state_t *) arg;
 
     uint64_t number;
     // While there is still a number to read
@@ -38,14 +37,12 @@ void *reader(void *arg)
         number = be64toh(number);
 
         // Lock state mutex to protect waiting_list
-        check(!pthread_mutex_lock(&mut_state),
-                "pthread_mutex_lock");
+        check(!pthread_mutex_lock(&mut_state), "pthread_mutex_lock");
         {
             factor_t new_factor = {number, 1, st->filename};
             // Divide the number by every factor in the prime list
             for (factor_t * it = list_begin(prime_list);
-                    it != list_end(prime_list);
-                    ++it)
+                    it != list_end(prime_list); it++)
             {
                 divide_as_much_as_possible(&new_factor, it);
             }
@@ -57,12 +54,10 @@ void *reader(void *arg)
 
                 // Push the full semaphore to indicate that a new number was
                 // added to the waiting list
-                check(!sem_post(&sem_full),
-                        "sem_post");
+                check(!sem_post(&sem_full), "sem_post");
             }
         }
-        check(!pthread_mutex_unlock(&mut_state),
-                "pthread_mutex_unlock");
+        check(!pthread_mutex_unlock(&mut_state), "pthread_mutex_unlock");
     }
 
     debug("finished reading %s", st->filename);
@@ -100,8 +95,7 @@ void *reader(void *arg)
             // Post the full semaphore one last time. This is done to prevent
             // the main thread from waiting on that semaphore indefinitely if
             // the waiting list is empty
-            check(!sem_post(&sem_full),
-                    "sem_post");
+            check(!sem_post(&sem_full), "sem_post");
         }
     }
     check(!pthread_mutex_unlock(&mut_state),
@@ -109,8 +103,7 @@ void *reader(void *arg)
 
     // If the file descriptor is not stdin, then close it
     if (st->fd != STDIN_FILENO)
-        check(!close(st->fd),
-                "fclose");
+        check(!close(st->fd), "fclose");
 
     return NULL;
 error:
@@ -131,8 +124,7 @@ error:
 factor_t * find_prime_with_one_occurrence()
 {
     for (factor_t *it = list_begin(prime_list);
-            it != list_end(prime_list);
-            it++)
+            it != list_end(prime_list); it++)
     {
         if (it->occur == 1)
             return it;
