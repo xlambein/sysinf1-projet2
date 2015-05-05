@@ -28,6 +28,8 @@
 #define ARGNAME_HARDER "--harder"
 #define ARGNAME_DEBUG "--debug"
 
+typedef unsigned long long ull;
+
 int small_primes_num = 0;
 uint64_t small_primes[SMALL_PRIMES_SIZE];
 bool debug = false;
@@ -130,7 +132,7 @@ void write_numbers(uint64_t *numbers, int num_count, char *path, int file_count)
         {
             printf("\nFile %d:\n", i);
             for (int j = i; j < num_count; j += file_count)
-                printf("%llu\n", (unsigned long long) numbers[j]);
+                printf("%llu\n", (ull) numbers[j]);
         }
     }
     
@@ -228,7 +230,7 @@ int main(int argc, char *argv[])
     {
         printf("Generated primes:\n");
         for (int i = 0; i < prime_count; i++)
-            printf("%llu\n", (unsigned long long) primes[i]);
+            printf("%llu\n", (ull) primes[i]);
     }
     uint64_t sol_prime = primes[0];
     
@@ -265,7 +267,7 @@ int main(int argc, char *argv[])
     write_numbers(final_numbers, num_count, path, file_count);
     
     if (debug)
-        printf("\nSolution: prime %llu in file %d.\n", (unsigned long long) sol_prime, sol_file);
+        printf("\nSolution: prime %llu in file %d.\n", (ull) sol_prime, sol_file);
     
     free(primes);
     free(base_factors);
