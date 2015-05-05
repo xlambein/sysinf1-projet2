@@ -32,7 +32,7 @@ int stop_timer(double * delta)
     return retval;
 }
 
-void finish(const factor_t * factor)
+void print_solution(const factor_t * factor)
 {
     printf("%" PRId64 "\n%s\n",
             factor->num,
