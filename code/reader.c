@@ -65,12 +65,10 @@ void *reader(void *arg)
     // If this is the last reader
     if (reader_count == 0)
     {
-        if (find_prime_with_one_occurrence())
-        {
-            check(!sem_post(&sem_full),
-                    "sem_post");
-        }
+        find_prime_with_one_occurrence();
         list_free(prime_list);
+        check(!sem_post(&sem_full),
+                "sem_post");
     }
     
     check(!pthread_mutex_unlock(&mut_state),
