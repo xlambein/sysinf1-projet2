@@ -293,7 +293,7 @@ static void main_loop()
         // to divide all the factors in the waiting list by it
         if (to_fact.num > 1)
         {
-            pthread_mutex_lock(&mut_state);
+            check(!pthread_mutex_lock(&mut_state), "pthread_mutex_lock");
             {
                 for (factor_t * it = list_begin(waiting_list);
                         it != list_end(waiting_list); it++)
@@ -329,7 +329,7 @@ static void main_loop()
                     list_push(prime_list, to_fact);
                 }
             }
-            pthread_mutex_unlock(&mut_state);
+            check(!pthread_mutex_unlock(&mut_state), "pthread_mutex_unlock");
         }
     }
     
