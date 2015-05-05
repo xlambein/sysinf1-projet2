@@ -5,6 +5,7 @@
 # The project executables
 /code/project2
 /gen/gen
+/encoder/encoder
 
 # Some temp files from various editors
 .*.swp
