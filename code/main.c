@@ -163,6 +163,9 @@ int main(int argc, char *argv[])
         if (found)
             break;
 
+        if (reader_count == 0 && waiting_list->size == 0)
+            return EXIT_FAILURE;
+
         // Get smallest number from waiting list
         
         check(!pthread_mutex_lock(&mut_state),
