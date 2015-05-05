@@ -44,7 +44,7 @@ void *factorize(void *starting_state)
         // Counting the threads that have finished
         check(!pthread_mutex_lock(&mut_factorizers), "pthread_lock_mutex");
         factorizer_meeting++;
-        if (factorizer_meeting == maxthreads)
+        if (factorizer_meeting == num_factorizers)
         {
             check(!sem_wait(&sem_start), "sem_wait");
             check(!sem_post(&sem_handshake), "sem_post");
