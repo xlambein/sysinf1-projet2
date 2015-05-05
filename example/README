@@ -1,3 +1,0 @@
-Pour tester votre projet, vous devez lancer votre programme en utilisant les 4 fichiers (./programme ... file1 file2 file3 file4). Si vous utilisez les 4 fichiers, votre programme devrait trouver 1997 comme facteur unique, celui-ci se trouvant dans file2.
-
-Si vous vouliez tester ce qu'il se passerait au cas où il y aurait plusieurs facteurs uniques, vous pouvez lancer le programme en utilisant seulement file1 file2 et file3.
