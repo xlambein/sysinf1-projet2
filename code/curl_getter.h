@@ -11,7 +11,7 @@
 // Structure used to pass arguments to the thread function curl_getter()
 typedef struct
 {
-    int fd; // A file descriptor
+    int fd;           // A file descriptor
     const char * url; // An url
 }
 curl_getter_starting_state_t;

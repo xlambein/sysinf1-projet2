@@ -14,8 +14,8 @@
 typedef struct
 {
     //TODO: change to a file descriptor
-    FILE * stream;
-    const char * filename;
+    FILE * stream;         // A file descriptor
+    const char * filename; // The name of the file associated
 }
 reader_starting_state_t;
 
