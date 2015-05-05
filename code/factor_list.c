@@ -52,18 +52,10 @@ void list_push(factor_list_t *list, factor_t factor)
     // If there is not enough space
     if (list->size == list->cont_size)
     {
-        // TODO: use ralloc
         // Double the size
         list->cont_size = 2 * list->size;
-        
-        // Copy the data
-        factor_t *copy = (factor_t *) malloc(list->cont_size * sizeof(factor_t));
-        for (int i = 0; i < list->size; i++)
-            copy[i] = list->list[i];
-        
-        // Replace the internal list with the copy
-        free(list->list);
-        list->list = copy;
+        list->list = (factor_t *) realloc(list->list, list->cont_size
+                * sizeof(factor_t));
     }
     
     // Add the factor at the end and increase the size
