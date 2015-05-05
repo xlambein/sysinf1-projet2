@@ -10,15 +10,12 @@
 #include <unistd.h>
 #include <curl/curl.h>
 
-//TODO: remove this
-#include <inttypes.h>
-
-#include "dbg.h"
-#include "util.h"
-#include "factor_list.h"
-#include "reader.h"
 #include "curl_getter.h"
+#include "dbg.h"
+#include "factor_list.h"
 #include "factorizer.h"
+#include "reader.h"
+#include "util.h"
 
 #define ARGNAME_MAXTHREADS "-maxthreads"
 #define ARGNAME_STDIN "-stdin"
@@ -26,9 +23,13 @@
 #define PREFIX_URL "http://"
 #define PREFIX_URL_LENGTH 7
 
+// Total number of readers
 static int num_readers;
+// Whether an stdin reader has been launched already
 static bool read_from_stdin = false;
+// File readers and integer factorizers
 static pthread_t *readers, *factorizers;
+// Starting states to be sent as arguments to the threads
 static reader_starting_state_t *readers_st;
 static factorizer_starting_state_t *factorizers_st;
 static curl_getter_starting_state_t *curl_getters_st;
@@ -46,14 +47,16 @@ int main(int argc, char *argv[])
     // Start the timer
     start_timer();
     
+    // Initialize things and launch the threads
     get_num_readers_and_factorizers(argc, argv);
     init();
-    
     launch_readers(argc, argv);
     launch_factorizers();
     
+    // Main loop that synchronizes the factorization
     main_loop();
     
+    // Free all the resources
     cleanup();
 
     // Stop timer and print elapsed time
@@ -61,9 +64,14 @@ int main(int argc, char *argv[])
     stop_timer(&elapsed_time);
     printf("%.3f\n", elapsed_time);
 
+    // If nothing failed up to this point, everything is fine
     return EXIT_SUCCESS;
 }
 
+/**
+ * Obtains the number of readers (number of paths) and the number of factorizers
+ * (maxthreads argument) from the command-line arguments.
+ */
 static void get_num_readers_and_factorizers(int argc, char *argv[])
 {
     num_readers = 0;
@@ -85,6 +93,9 @@ static void get_num_readers_and_factorizers(int argc, char *argv[])
     }
 }
 
+/**
+ * Initializes all the resources.
+ */
 static void init()
 {
     // Initialize semaphores and mutexes
@@ -124,74 +135,95 @@ error:
     exit(EXIT_FAILURE);
 }
 
+/**
+ * Launches the reader threads on the files provided in the arguments. They will
+ * only start reading once all the readers have been launched.
+ */
 static void launch_readers(int argc, char *argv[])
 {
-    // Lock the state mutex to be sure a reader doesn't finish before another
-    // is spawned
+    // Lock the state mutex to make sure no reader finishes before all of them
+    // are launched
     check(!pthread_mutex_lock(&mut_state), "pthread_mutex_lock");
     {
         for (int i = 1; i < argc; i++)
         {
+            // Just skip the maxthreads argument, since it was read already
             if (strcmp(argv[i], ARGNAME_MAXTHREADS) == 0)
                 i++;
+            // If the stdin argument is set, launch a reader on stdin
             else if (!read_from_stdin && strcmp(argv[i], ARGNAME_STDIN) == 0)
             {
                 debug("spawning a stdin reading thread...");
 
+                // Set the boolean so only one stdin reader is launched
                 read_from_stdin = true;
+                
+                // Get the current position of the reader
                 int cur = readers_active;
                 readers_active++;
 
+                // Associate the file descriptor and the filename
                 readers_st[cur].fd = STDIN_FILENO;
                 readers_st[cur].filename = STDIN_FILENAME;
 
-                check(!pthread_create(&readers[cur], NULL, &reader, &readers_st[cur]),
-                        "pthread_create");
+                // Launch the reader
+                check(!pthread_create(&readers[cur], NULL, &reader,
+                        &readers_st[cur]), "pthread_create");
             }
+            // If the given path starts with "http://", launch curl
             else if (strncmp(argv[i], PREFIX_URL, PREFIX_URL_LENGTH) == 0)
             {
                 debug("spawning a network reading thread...");
                 
+                // Get the current position of the reader
                 int cur = readers_active;
                 readers_active++;
 
+                // Files are read from the network by creating a pipe from which
+                // the reader will read as if it were a normal file
                 int pipefd[2];
                 check(!pipe(pipefd), "pipe");
 
+                // Associate the file descriptor and the filename
                 readers_st[cur].fd = pipefd[0];
                 readers_st[cur].filename = argv[i];
 
-                check(!pthread_create(&readers[cur], NULL, &reader, &readers_st[cur]),
-                        "pthread_create");
+                // Launch the reader
+                check(!pthread_create(&readers[cur], NULL, &reader,
+                        &readers_st[cur]), "pthread_create");
 
-                // Spawn detached curl_getter thread
+                // Give curl the pipe to write into and the url
                 curl_getters_st[cur].fd = pipefd[1];
                 curl_getters_st[cur].url = argv[i];
 
+                // Launch curl on a detached thread
                 pthread_t curl_getter_thread;
-
-                check(!pthread_create(&curl_getter_thread, NULL,
-                            &curl_getter, &curl_getters_st[cur]),
-                        "phtread_create");
-                check(!pthread_detach(curl_getter_thread),
-                        "pthread_detach");
+                check(!pthread_create(&curl_getter_thread, NULL, &curl_getter,
+                        &curl_getters_st[cur]), "phtread_create");
+                check(!pthread_detach(curl_getter_thread), "pthread_detach");
             }
+            // Otherwise, launch a simple file reader
             else
             {
                 debug("spawning a file reading thread...");
 
+                // Get the current position of the reader
                 int cur = readers_active;
+                
+                // Only increment the number of readers if the path is valid
                 if ((readers_st[cur].fd = open(argv[i], O_RDONLY)) == -1)
                     continue;
                 readers_active++;
-                printf("%d\n", cur);
 
+                // Associate the filename
                 readers_st[cur].filename = argv[i];
 
-                check(!pthread_create(&readers[cur], NULL, &reader, &readers_st[cur]),
-                        "pthread_create");
+                // Launch the reader
+                check(!pthread_create(&readers[cur], NULL, &reader,
+                        &readers_st[cur]), "pthread_create");
             }
         }
+        // Refresh the number of readers in case some files failed to open
         num_readers = readers_active;
     }
     check(!pthread_mutex_unlock(&mut_state), "pthread_mutex_unlock");
@@ -201,13 +233,17 @@ error:
     exit(EXIT_FAILURE);
 }
 
+/**
+ * Launches the factorizer threads. They will not start factorizing immediately,
+ * since they have to wait for an input from the main loop.
+ */
 static void launch_factorizers()
 {
     // Spawn the factorizer threads
     for (int i = 0; i < num_factorizers; i++)
     {
-        check(!pthread_create(&factorizers[i], NULL, &factorizer, &factorizers_st[i]),
-                "pthread_create");
+        check(!pthread_create(&factorizers[i], NULL, &factorizer,
+                &factorizers_st[i]), "pthread_create");
     }
     
     return;
@@ -215,6 +251,13 @@ error:
     exit(EXIT_FAILURE);
 }
 
+/**
+ * Executes the main loop of the program, i.e. takes a number to factorizer,
+ * launch the factorizers on it then once they're finished, performs some scans
+ * too see if it is used elsewhere. If it finds a prime that is not used
+ * elsewhere, and the readers have all finished reading, that means it has found
+ * the solution.
+ */
 static void main_loop()
 {
     while (!found)
