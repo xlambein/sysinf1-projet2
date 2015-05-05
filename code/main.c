@@ -222,9 +222,12 @@ static void main_loop()
 {
     while (!found)
     {
+        // Wait for a number to be added to the waiting list
         check(!sem_wait(&sem_full), "sem_wait");
         if (found)
             break;
+        
+        // If no prime with only one occurence was found
         if (readers_active == 0 && waiting_list->size == 0)
             goto error;
 
@@ -282,7 +285,8 @@ static void main_loop()
                 // Otherwise we add it to the prime list
                 else
                 {
-                    debug("adding %llu to the prime list", (unsigned long long) to_fact.num);
+                    debug("adding %llu to the prime list",
+                            (unsigned long long) to_fact.num);
                     list_push(prime_list, to_fact);
                 }
             }
@@ -295,6 +299,11 @@ error:
     exit(EXIT_FAILURE);
 }
 
+/**
+ * Gets the smallest factor from the waiting list and removes it.
+ *
+ * @return: a factor_t containing the factor with its occurences and file.
+ */
 static factor_t get_smallest_from_waiting_list()
 {
     factor_t smallest;
@@ -323,6 +332,9 @@ error:
     exit(EXIT_FAILURE);
 }
 
+/**
+ * Joins the threads and frees all the resources.
+ */
 static void cleanup()
 {
     // Join the reader threads
