@@ -273,7 +273,7 @@ static void main_loop()
 
         // Get smallest number from waiting list
         to_fact = get_smallest_from_waiting_list();
-        debug("choosing %llu", (unsigned long long) to_fact.num);
+        debug("choosing %llu", (ull) to_fact.num);
 
         // Set the factorizers to begin with different offsets
         for (int i = 0; i < num_factorizers; i++)
@@ -287,7 +287,7 @@ static void main_loop()
         
         // Wait for the factorizers
         check(!sem_wait(&sem_finish), "sem_wait");
-        debug("remaining: %llu", (unsigned long long) to_fact.num);
+        debug("remaining: %llu", (ull) to_fact.num);
         
         // If the factor we just found is bigger than 1, it is prime, so we try
         // to divide all the factors in the waiting list by it
@@ -325,8 +325,7 @@ static void main_loop()
                 // Otherwise we add it to the prime list
                 else
                 {
-                    debug("adding %llu to the prime list",
-                            (unsigned long long) to_fact.num);
+                    debug("adding %llu to the prime list", (ull) to_fact.num);
                     list_push(prime_list, to_fact);
                 }
             }

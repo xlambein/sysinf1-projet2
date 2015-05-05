@@ -45,7 +45,8 @@ void *factorizer(void *starting_state)
                     // thread before we locked the mutex
                     if (factor_found.occur > 0)
                     {
-                        debug("dividing by %llu, %d times", (ull) i, factor_found.occur);
+                        debug("dividing by %llu, %d times", (ull) i,
+                                factor_found.occur);
                         
                         // Add the factor to the waiting list and increment the
                         // semaphore
@@ -53,7 +54,8 @@ void *factorizer(void *starting_state)
                         check(!sem_post(&sem_full), "sem_post");
                     }
                 }
-                check(!pthread_mutex_unlock(&mut_state), "pthread_unlock_mutex");
+                check(!pthread_mutex_unlock(&mut_state),
+                        "pthread_unlock_mutex");
             }
         }
         
