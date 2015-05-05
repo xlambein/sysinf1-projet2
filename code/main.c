@@ -40,6 +40,9 @@ static void cleanup();
 
 int main(int argc, char *argv[])
 {
+    // Start the timer
+    start_timer();
+    
     get_num_readers_and_factorizers(argc, argv);
     init();
     
@@ -49,6 +52,11 @@ int main(int argc, char *argv[])
     main_loop();
     
     cleanup();
+
+    // Stop timer and print elapsed time
+    double elapsed_time;
+    stop_timer(&elapsed_time);
+    printf("%.3f\n", elapsed_time);
 
     return EXIT_SUCCESS;
 }
@@ -85,8 +93,8 @@ static void init()
     check(!pthread_mutex_init(&mut_factorizers, NULL), "pthread_mutex_init");
 
     // Create our extendable lists
-    check_mem((waiting_list = list_new()) != NULL, "list_new");
-    check_mem((prime_list = list_new()) != NULL, "list_new");
+    check_mem((waiting_list = list_new()) != NULL);
+    check_mem((prime_list = list_new()) != NULL);
     
     // Allocate the readers' structures
     readers = (pthread_t *) malloc(num_readers * sizeof(pthread_t));

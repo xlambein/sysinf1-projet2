@@ -16,6 +16,9 @@ extern factor_t to_fact;
 extern factor_list_t *waiting_list, *prime_list;
 extern int num_factorizers, readers_active, factorizer_meeting;
 
+int start_timer();
+int stop_timer(double * delta);
+
 void finish(const factor_t *factor);
 void divide_as_much_as_possible(factor_t *to_divide, factor_t *divisor);
 
