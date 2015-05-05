@@ -36,13 +36,13 @@ size_t write_callback(void *buffer, size_t size, size_t nmemb, void *userp)
  * Performs an HTTP GET request to an URL and writes the body into a file
  * descriptor.
  *
- * @arg A pointer to a curl_getter_starting_state_t structure, containing
+ * @arg A pointer to a curl_getter_starting_state_t structure, containing :
  * - fd, the file descriptor and
  * - url, the url
  *
  * @returns: NULL
  * 
- * Note: at the end of the function, fg is closed.
+ * Note: at the end of the function, fd is closed.
  */
 void *curl_getter(void *arg)
 {
