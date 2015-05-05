@@ -13,8 +13,7 @@
 // Structure used to pass arguments to the thread function reader()
 typedef struct
 {
-    //TODO: change to a file descriptor
-    FILE * stream;         // A file descriptor
+    int fd;                // A file descriptor
     const char * filename; // The name of the file associated
 }
 reader_starting_state_t;

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <stdint.h>
 #include <endian.h>
 #include <pthread.h>
@@ -31,7 +32,7 @@ void *reader(void *arg)
 
     uint64_t number;
     // While there is still a number to read
-    while (fread(&number, sizeof(uint64_t), 1, st->stream) == 1)
+    while (read(st->fd, &number, sizeof(uint64_t)))
     {
         // Convert the number from BigEndian
         number = be64toh(number);
@@ -107,8 +108,8 @@ void *reader(void *arg)
             "pthread_mutex_unlock");
 
     // If the file descriptor is not stdin, then close it
-    if (st->stream != stdin)
-        check(!fclose(st->stream),
+    if (st->fd != STDIN_FILENO)
+        check(!close(st->fd),
                 "fclose");
 
     return NULL;

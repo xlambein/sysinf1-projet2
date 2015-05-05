@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <string.h>
@@ -139,7 +142,7 @@ static void launch_readers(int argc, char *argv[])
                 int cur = readers_active;
                 readers_active++;
 
-                readers_st[cur].stream = stdin;
+                readers_st[cur].fd = STDIN_FILENO;
                 readers_st[cur].filename = STDIN_FILENAME;
 
                 check(!pthread_create(&readers[cur], NULL, &reader, &readers_st[cur]),
@@ -155,21 +158,15 @@ static void launch_readers(int argc, char *argv[])
                 int pipefd[2];
                 check(!pipe(pipefd), "pipe");
 
-                if ((readers_st[cur].stream = fdopen(pipefd[0], "r")) == NULL)
-                {
-                    close(pipefd[0]);
-                    close(pipefd[1]);
-                    continue;
-                }
-
+                readers_st[cur].fd = pipefd[0];
                 readers_st[cur].filename = argv[i];
 
                 check(!pthread_create(&readers[cur], NULL, &reader, &readers_st[cur]),
                         "pthread_create");
 
                 // Spawn detached curl_getter thread
-                curl_getters_st[cur].url = argv[i];
                 curl_getters_st[cur].fd = pipefd[1];
+                curl_getters_st[cur].url = argv[i];
 
                 pthread_t curl_getter_thread;
 
@@ -184,7 +181,7 @@ static void launch_readers(int argc, char *argv[])
                 debug("spawning a file reading thread...");
 
                 int cur = readers_active;
-                if ((readers_st[cur].stream = fopen(argv[i], "r")) == NULL)
+                if ((readers_st[cur].fd = open(argv[i], O_RDONLY)) == -1)
                     continue;
                 readers_active++;
                 printf("%d\n", cur);
