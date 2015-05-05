@@ -59,7 +59,7 @@ int stop_timer(double * elapsed_time)
 void print_solution(const factor_t * factor)
 {
     // PRId64 is the format for uint64_t
-    printf("%" PRId64 "\n%s\n",
+    printf("%" PRIu64 "\n%s\n",
             factor->num,
             factor->filename);
 }
