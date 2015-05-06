@@ -14,7 +14,7 @@
 
 \begin{center}
 \begin{tabu} to \textwidth {lX[c]r}
-    Xavier Lambein & \large{\textbf{Projet 2: Architecture}} & Victor Lecomte \\
+    Xavier Lambein & \large{\textbf{Projet 2: Rapport}} & Victor Lecomte \\
     54621300 & LSINF1252 & 65531300 \\
     \hline
 \end{tabu}
@@ -22,9 +22,15 @@
 
 \vspace{0.7cm}
 
-\texttt{TL;DR.} Nous avons choisi l'algorithme de divisions successives, sur lequel nous lançons plusieurs threads qui testent la division avec des valeurs de départ décalées.
+\subsection*{Concept}
 
-\subsection*{Fonctionnement du programme}
+Dans le cadre de ce projet, nous avons décidé de ne pas adopter une simple approche producteur-consommateur avec parallélisation externe. À la place, nous avons développé un algorithme qui utilise les caractéristiques de l'énoncé et s'adapte au mieux aux informations qu'il obtient au fur et à mesure.
+
+Puisque l'énoncé mentionne que tous les facteurs premiers sauf un sont utilisés plus d'une fois, on peut tirer un avantage considérable des facteurs premiers déjà trouvés. Notre algorithme profite donc de cette propriété à chaque fois qu'il trouve un facteur premier, en le testant sur tous les autres nombres, et tant que la lecture n'est pas terminée, en essayant de diviser un nombre lu par chaque facteur premier déjà trouvé.
+
+Cette approche permet une diminution très significative du travail de factorisation, mais comme nous nous y attendions nous avons trouvé des cas où il cette approche le ralentit. Nous allons discuter de ces problèmes dans la section d'analyse des performances. Toutefois, nous avons tout de même choisi de faire comme ça, pour le challenge de synchronisation et d'organisation qu'il représentait, et pour le temps économisé pour des cas typiques (grands facteurs premiers, 2 à 3 occurences de chaque premier).
+
+\subsection*{Architecture du programme}
 
 Notre programme se décompose en trois parties différentes, qui possèdent leur fonction propre: la boucle principale, les \emph{readers} et les \emph{factorizers}. Les \emph{readers} sont des threads servant à lire des entiers depuis les entrées pour les placer dans une liste interne; les \emph{factorizers} sont des threads parcourant un entier pour en trouver les facteurs; enfin, la boucle principale sert à synchroniser les \emph{factorizers} pour changer l'entier courant à factoriser \texttt{to\_fact} et éventuellement terminer le programme.
 
@@ -96,32 +102,11 @@ On retrouve tout à fait ci-dessus l'algorithme classique du problème du rendez
 
 Il suffit ensuite à la boucle principale de poster \texttt{start} puis d'attendre \texttt{finish} dès qu'elle veut lancer les threads sur un nombre.
 
-\newpage
-\section*{Trucs vieux :D}
+\subsection*{Analyse des performances}
 
-\subsection*{Déroulement}
+Comme mentionné dans la section «Concept», notre algorithme marche particulièrement bien pour certains cas, et malheureusement il marche particulièrement mal pour d'autres. Pour mettre ces effets en évidence, nous mesuré ses performances sur trois types de tests en particulier, et nous allons commenter les résultats.
 
-Nous commençons par lire tous les entiers à factoriser et nous les plaçons dans un heap (dans l'ordre inversé, avec le plus petit au-dessus). Ensuite, tant que le heap n'est pas vide, nous enlevons le plus petit entier du heap et nous lançons dessus les $n$ threads à notre disposition. Dès qu'ils trouvent un facteur, ils l'ajoutent au heap et divisent la valeur à factoriser.
-
-Une fois que les $n$ threads ont tous atteint la racine, cela signifie que le nombre restant est premier. Nous essayons de diviser chaque nombre dans le heap par ce facteur premier. Si aucun n'est divisible, ce nombre est la solution. Sinon nous continuons.
-
-Voici le pseudocode pour le thread principal:
-
-\lstinputlisting{main}
-
-Remarquons que si la boucle \texttt{while} se finit, l'input est incorrect, car cela signifie qu'aucun facteur premier ne divise exactement un nombre exactement une fois.
-
-Les $n$ threads recherchent des facteurs du nombre courant \texttt{toFact} en parcourant tous les entiers de 2 à $\sqrt{\texttt{toFact}}$, avec un pas de $n$: le premier thread itérant sur $i=2,2+n,2+2n,\dots$; le second thread itérant sur $i=3,3+n,3+2n,\dots$; etc. Pour chaque $i$, le programme regarde s'il divise \texttt{toFact}. Dans ce cas, il s'agit d'un facteur (pas nécessairement premier), et la procédure décrite ci-dessus est appliquée.
-
-Voici le pseudocode pour les threads de recherche de facteurs:
-
-\lstinputlisting{factorizer}
-
-\subsection*{Synchronisation des threads}
-
-Notre programme ne présente qu'une seule section critique à proprement parler: il s'agit du moment où un thread a trouvé un facteur de \texttt{toFact}. Celui-ci bloque alors une mutex qui empêche l'écriture sur la variable partagée \texttt{toFact}, ce qui permet au thread de diviser celle-ci par le facteur en toute sécurité. À l'intérieur de la section protégée par la mutex, le programme vérifie d'abord à nouveau si le facteur trouvé divise bel et bien \texttt{toFact}, pour être certain que la valeur de celui-ci n'aurait pas changée avant que la mutex ne soit bloquée.
-
-Une deuxième zone de synchronisation apparaît lorsque tous les threads ont terminé de parcourir les entiers entre 2 et $\sqrt{\texttt{toFact}}$. Le thread principal est alors chargé de vérifier si une solution a été trouvée, et sinon de continuer l'algorithme avec le nombre suivant présent sur le heap. Il fait cela de manière très simple, en tuant les $n$ threads, effectuant les vérifcations, puis éventuellement en relançant $n$ nouveaux threads.
+\subsubsection*{Premier cas: beaucoup de petits facteurs premiers}
 
 \end{document}
 
