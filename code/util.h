@@ -28,8 +28,10 @@ extern sem_t sem_full,
              sem_finish;
 
 // The mutex protecting the global state of the program (waiting_list,
-// prime_list, readers_active, to_fact and found)
+// prime_list, readers_active, and found)
 extern pthread_mutex_t mut_state,
+// The mutex protecting to_fact
+                       mut_to_fact,
 // The mutex protecting the number of factorizers at the barrier
                        mut_factorizers;
 

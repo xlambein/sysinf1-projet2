@@ -5,7 +5,7 @@
 #include <inttypes.h>
 
 sem_t sem_full, sem_start, sem_finish, sem_handshake;
-pthread_mutex_t mut_state, mut_factorizers;
+pthread_mutex_t mut_state, mut_to_fact, mut_factorizers;
 bool found = false;
 factor_t to_fact = {0, 0, NULL};
 factor_list_t *waiting_list, *prime_list;

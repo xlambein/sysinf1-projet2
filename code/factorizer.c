@@ -34,7 +34,7 @@ void *factorizer(void *starting_state)
             // If i is a divisor
             if (to_fact.num % i == 0)
             {
-                check(!pthread_mutex_lock(&mut_state), "pthread_lock_mutex");
+                check(!pthread_mutex_lock(&mut_to_fact), "pthread_lock_mutex");
                 {
                     // Divide the number as many times as possible by the factor
                     // we just found, remembering the occurences
@@ -48,13 +48,19 @@ void *factorizer(void *starting_state)
                         debug("dividing by %llu, %d times", (ull) i,
                                 factor_found.occur);
                         
-                        // Add the factor to the waiting list and increment the
-                        // semaphore
-                        list_push(waiting_list, factor_found);
-                        check(!sem_post(&sem_full), "sem_post");
+                        check(!pthread_mutex_lock(&mut_state),
+                                "pthread_lock_mutex");
+                        {
+                            // Add the factor to the waiting list and increment
+                            // the semaphore
+                            list_push(waiting_list, factor_found);
+                            check(!sem_post(&sem_full), "sem_post");
+                        }
+                        check(!pthread_mutex_unlock(&mut_state),
+                                "pthread_unlock_mutex");
                     }
                 }
-                check(!pthread_mutex_unlock(&mut_state),
+                check(!pthread_mutex_unlock(&mut_to_fact),
                         "pthread_unlock_mutex");
             }
         }

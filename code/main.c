@@ -104,6 +104,7 @@ static void init()
     check(!sem_init(&sem_finish, 0, 0), "sem_init");
     check(!sem_init(&sem_handshake, 0, 0), "sem_init");
     check(!pthread_mutex_init(&mut_state, NULL), "pthread_mutex_init");
+    check(!pthread_mutex_init(&mut_to_fact, NULL), "pthread_mutex_init");
     check(!pthread_mutex_init(&mut_factorizers, NULL), "pthread_mutex_init");
 
     // Create our extendable lists
@@ -404,6 +405,7 @@ static void cleanup()
     check(!sem_destroy(&sem_finish), "sem_destroy");
     check(!sem_destroy(&sem_handshake), "sem_destroy");
     check(!pthread_mutex_destroy(&mut_state), "pthread_mutex_destroy");
+    check(!pthread_mutex_destroy(&mut_to_fact), "pthread_mutex_destroy");
     check(!pthread_mutex_destroy(&mut_factorizers), "pthread_mutex_destroy");
 
     // Free the waiting list (the prime list is already freed)
