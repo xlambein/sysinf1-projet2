@@ -104,8 +104,9 @@ Il suffit ensuite à la boucle principale de poster \texttt{start} puis d'attend
 
 \subsection*{Analyse des performances}
 
-Comme mentionné dans la section «Concept», notre algorithme marche particulièrement bien pour certains cas, et malheureusement il marche particulièrement mal pour d'autres. Pour mettre ces effets en évidence, nous mesuré ses performances sur trois types de tests en particulier, et nous allons commenter les résultats. Commençons par le pire cas qui puisse arriver.
+Comme mentionné dans la section «Concept», notre algorithme marche particulièrement bien pour certains cas, et malheureusement il marche particulièrement mal pour d'autres. Pour mettre ces effets en évidence, nous mesuré ses performances sur trois types de tests en particulier, et nous allons commenter les résultats.\footnote{Les tests ont été générés par notre générateur \texttt{gen.c} et les temps ont été obtenus en chronométrant au moins trois fois chaque test avec un nombre de threads et en faisant la moyenne.} Commençons par le pire cas qui puisse arriver.
 
+\newpage
 \subsubsection*{Premier cas: beaucoup de petits facteurs premiers}
 
 À cause des vérifications que nous effectuons pour voir si un facteur premier est utilisé dans d'autres nombres, notre complexité par rapport au nombre d'entiers $n$ dans les fichiers d'entrée est environ $O(n^2)$ (si l'on néglige le temps de factorisation). Par conséquent, pour des fichiers contenant beaucoup de nombres avec de petits facteurs premiers, notre programme marche plutôt lentement: en effet, les facteurs premiers étant petits, le temps passé à factoriser est négligeable par rapport au temps passé à tenter de diviser tous les autres nombres par un facteur premier donné. Cela mène à deux inconvénients:
@@ -114,22 +115,82 @@ Comme mentionné dans la section «Concept», notre algorithme marche particuli�
     \item Les tentatives de division par les facteurs premiers trouvés n'étant pas parallélisables, l'ajout de threads n'améliore pas les performances et a même tendance à les empirer.
 \end{itemize}
 
-Les résultats des tests sont donnés à la figure \ref{fig:many-small-primes}.
+Les résultats des tests sont donnés à la figure~\ref{fig:many-small-primes}. La tendance quadratique du temps d'exécution se montre clairement sur le graphe logarithmique, ce qui signifie que le temps de factorisation est ici négligeable. On voit aussi comme conséquence logique que l'ajout de threads ne régle pas le problème, et l'empire même.
 
-\begin{figure}[h!]
+Toutefois, nous considérons que ce genre de cas n'est pas représentatif d'un usage normal d'un programme de factorisation. Il nous semble clair que la factorisation devrait être la partie demandant le plus de calculs, ce qui nous a été confirmé à la séance d'architecture. Pour régler efficacement ce genre de cas, il conviendrait de d'abord précalculer les petits nombres premiers puis factoriser les nombres dans des threads différents en utilisant les premiers précalculés, en producteur consommateur.
+
+\begin{figure}[t!]
     \centering
     \begin{tikzpicture}
         \begin{loglogaxis}[
                 xlabel={Nombre d'entiers à l'entrée},
-                ylabel={Temps d'exécution (\second)}
+                ylabel={Temps d'exécution (\second)},
+                legend entries={1 threads, 2 threads, 4 threads},
+                legend pos=north west
+            ]
+            \addplot[color=blue,mark=*,mark size=.5mm] table {data/many-small-primes-1};
+            \addplot[color=green,mark=*,mark size=.5mm] table {data/many-small-primes-2};
+            \addplot[color=red,mark=*,mark size=.5mm] table {data/many-small-primes-4};
+        \end{loglogaxis}
+    \end{tikzpicture}
+    \caption{Avec beaucoup de nombres faits de petits facteurs premiers, la complexité $O(n^2)$ des divisions par les premiers trouvés prédomine, et ajouter des threads n'améliore pas les choses.}
+    \label{fig:many-small-primes}
+\end{figure}
+
+\newpage
+\subsubsection*{Deuxième cas: beaucoup de grands facteurs premiers répartis aléatoirement}
+
+Montrons maintenant un type de cas où notre algorithme se montre particulièrement efficace. Il s'agit d'un cas avec de grands facteurs premiers (choisis aléatoirement entre $1$ et $2^{32}$), chacun avec 2 à 3 occurences (sauf la solution), et répartis aléatoirement dans les nombres de l'entrée, qui peuvent aller jusqu'à $2^{64}$. Il s'agit donc d'un cas d'utilisation typique très raisonnable.
+
+Sur ce genre de cas, notre programme va d'abord tenter de factoriser un nombre dans la \emph{waiting list}, ce qui va lui prendre environ $2^{32}$ essais au pire cas. Ensuite, il aura trouvé un facteur premier, qu'il pourra tester sur d'autres nombres en attente. Ceux-ci vont très probablement à leur tour donner de nouveaux facteurs premiers, qui vont permettre de factoriser facilement d'autres nombres, etc. Au final, la découverte du premier facteur premier va mener à une réaction en chaîne qui va permettre de factoriser les autres nombres très facilement.
+
+Au final, ce qui prendra le plus de temps sera de vérifier que tous les facteurs trouvés sont premiers, ce qui prendra de l'ordre de $2^{16}$ opérations par nombre, bien mieux que les $2^{32}$ que nous aurions obtenus avec une simple factorisation parallèle de tous les nombres en producteur-consommateur. Puisque c'est cette partie qui est le facteur limitant, nous avons une complexité de l'ordre de $O(n)$ où $n$ est le nombre d'entiers dans l'input (en éliminant le facteur constant $2^{16}$.
+
+Les résultats sont donnés à la figure~\ref{fig:large-primes}. La tendance en $O(n^2)$ apparaît très clairement et on remarque que l'ajout de threads aide significativement à accélérer le programme, malgré la parallélisation interne. Pour $n=10000$, il y a un facteur $1.29$ de différence entre 1 threads et 2 threads, et un facteur $1.45$ entre 2 threads et 4 threads. Il est normal que l'on ne s'approche pas très près du facteur 2 ici car la vérification de division des facteurs premiers sur $10000$ nombres amène un terme constant non-négligeable.
+
+\begin{figure}[t!]
+    \centering
+    \begin{tikzpicture}
+        \begin{loglogaxis}[
+                xlabel={Nombre d'entiers à l'entrée},
+                ylabel={Temps d'exécution (\second)},
+                legend entries={1 threads, 2 threads, 4 threads},
+                legend pos=north west
             ]
             \addplot[color=blue,mark=*,mark size=.5mm] table {data/large-primes-1};
             \addplot[color=green,mark=*,mark size=.5mm] table {data/large-primes-2};
             \addplot[color=red,mark=*,mark size=.5mm] table {data/large-primes-4};
         \end{loglogaxis}
     \end{tikzpicture}
-    \caption{Avec des nombres formés de grands facteurs premiers placés aléatoirement, le temps d'exécution reste assez court pour de grandes entrées.}
+    \caption{Avec des nombres formés de grands facteurs premiers placés aléatoirement, le temps d'exécution reste très court pour de grandes entrées.}
     \label{fig:large-primes}
+\end{figure}
+
+\newpage
+\subsubsection*{Troisième cas: quelques carrés de grands premiers}
+
+Cette série de cas a été spécialement imaginée pour éliminer l'avantage que notre programme a grâce à sa réutilisation des facteurs premiers trouvés. Il consiste en un fichier contenant uniquement des carrés de grands premiers, sauf pour le dernier nombre, le produit du plus grand premier parmi les précédents et de la solution, encore plus grande.
+
+Étant donné que notre programme utilise une heuristique qui consiste à toujours choisir le plus petit nombre de la liste d'attente, il va d'abord tenter de factoriser le plus petit carré, puis le suivant, etc. pour finalement arriver au dernier nombre, contenant la solution. Puisque chaque nombre premier n'est présent que dans un nombre (son carré), la réutilisation des facteurs premiers va être complètement inutile, en ne va donc pas permettre d'abaisser le temps de factorisation des autres nombres de $2^{32}$ à $2^{16}$ comme pour le cas  précédent. Il s'agit donc d'un ralentissement de l'ordre de $2^{16}$ (on a observé un ralentissement relatif de $15000$ environ, ce qui est raisonnablement dans l'ordre de grandeur de $2^{16}=65536$).
+
+Ce cas est évidemment très improbable sur des entrées aléatoires. Son intérêt principal est de mesurer précisément les performances de la partie factorisation. On voit bien ici que le temps est directement proportionnel à la taille de l'entrée, et l'augmentation du nombre de thread améliore la performance: d'un facteur $1.74$ entre 1 et 2 threads et d'un facteur $1.51$ entre 2 et 4 threads. On peut aisément attribuer la distance par rapport au facteur 2 à la parallélisation interne, et éventuellement au système d'exploitation.
+
+\begin{figure}[t!]
+    \centering
+    \begin{tikzpicture}
+        \begin{loglogaxis}[
+                xlabel={Nombre d'entiers à l'entrée},
+                ylabel={Temps d'exécution (\second)},
+                legend entries={1 threads, 2 threads, 4 threads},
+                legend pos=north west
+            ]
+            \addplot[color=blue,mark=*,mark size=.5mm] table {data/large-prime-squares-1};
+            \addplot[color=green,mark=*,mark size=.5mm] table {data/large-prime-squares-2};
+            \addplot[color=red,mark=*,mark size=.5mm] table {data/large-prime-squares-4};
+        \end{loglogaxis}
+    \end{tikzpicture}
+    \caption{Avec des carrés de grands facteurs, notre algorithme perd son avantage, mais la parallélisation accélère nettement le calcul.}
+    \label{fig:large-prime-squares}
 \end{figure}
 
 \end{document}
