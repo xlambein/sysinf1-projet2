@@ -21,7 +21,6 @@
 *.toc
 *.gz
 *.bcf
-*.out
 *.run.xml
 *(busy)
 

@@ -104,9 +104,33 @@ Il suffit ensuite à la boucle principale de poster \texttt{start} puis d'attend
 
 \subsection*{Analyse des performances}
 
-Comme mentionné dans la section «Concept», notre algorithme marche particulièrement bien pour certains cas, et malheureusement il marche particulièrement mal pour d'autres. Pour mettre ces effets en évidence, nous mesuré ses performances sur trois types de tests en particulier, et nous allons commenter les résultats.
+Comme mentionné dans la section «Concept», notre algorithme marche particulièrement bien pour certains cas, et malheureusement il marche particulièrement mal pour d'autres. Pour mettre ces effets en évidence, nous mesuré ses performances sur trois types de tests en particulier, et nous allons commenter les résultats. Commençons par le pire cas qui puisse arriver.
 
 \subsubsection*{Premier cas: beaucoup de petits facteurs premiers}
+
+À cause des vérifications que nous effectuons pour voir si un facteur premier est utilisé dans d'autres nombres, notre complexité par rapport au nombre d'entiers $n$ dans les fichiers d'entrée est environ $O(n^2)$ (si l'on néglige le temps de factorisation). Par conséquent, pour des fichiers contenant beaucoup de nombres avec de petits facteurs premiers, notre programme marche plutôt lentement: en effet, les facteurs premiers étant petits, le temps passé à factoriser est négligeable par rapport au temps passé à tenter de diviser tous les autres nombres par un facteur premier donné. Cela mène à deux inconvénients:
+\begin{itemize}
+    \item La complexité en $O(n^2)$ fait que le temps d'exécution augmente rapidement avec la taille de l'input, et l'algorithme a du mal à factoriser plus de quelques dizaines de milliers de nombres.
+    \item Les tentatives de division par les facteurs premiers trouvés n'étant pas parallélisables, l'ajout de threads n'améliore pas les performances et a même tendance à les empirer.
+\end{itemize}
+
+Les résultats des tests sont donnés à la figure \ref{fig:many-small-primes}.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \begin{loglogaxis}[
+                xlabel={Nombre d'entiers à l'entrée},
+                ylabel={Temps d'exécution (\second)}
+            ]
+            \addplot[color=blue,mark=*,mark size=.5mm] table {data/large-primes-1};
+            \addplot[color=green,mark=*,mark size=.5mm] table {data/large-primes-2};
+            \addplot[color=red,mark=*,mark size=.5mm] table {data/large-primes-4};
+        \end{loglogaxis}
+    \end{tikzpicture}
+    \caption{Avec des nombres formés de grands facteurs premiers placés aléatoirement, le temps d'exécution reste assez court pour de grandes entrées.}
+    \label{fig:large-primes}
+\end{figure}
 
 \end{document}
 
