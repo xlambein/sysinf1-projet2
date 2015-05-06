@@ -64,7 +64,7 @@ Si celui-ci n'est pas 1, alors la boucle principale va parcourir chaque entier d
 \end{itemize}
 
 \paragraph{Choix d'un nouvel entier}
-Si la solution n'a pas été trouvée, un nouvel entier est choisi pour \texttt{to\_fact}: il s'agit du plus petit entier de la \emph{waiting list}, trouvé en faisant une simple recherche en $\mathcal{O}(n)$; en effet, la liste n'est pas ordonnée.
+Si la solution n'a pas été trouvée, un nouvel entier est choisi pour \texttt{to\_fact}: il s'agit du plus petit entier de la \emph{waiting list}, trouvé en faisant une simple recherche en $O(n)$; en effet, la liste n'est pas ordonnée.
 
 \subsubsection*{Les \emph{readers}}
 
@@ -104,7 +104,7 @@ Il suffit ensuite à la boucle principale de poster \texttt{start} puis d'attend
 
 \subsection*{Analyse des performances}
 
-Comme mentionné dans la section «Concept», notre algorithme marche particulièrement bien pour certains cas, et malheureusement il marche particulièrement mal pour d'autres. Pour mettre ces effets en évidence, nous mesuré ses performances sur trois types de tests en particulier, et nous allons commenter les résultats.\footnote{Les tests ont été générés par notre générateur \texttt{gen.c} et les temps ont été obtenus en chronométrant au moins trois fois chaque test avec un nombre de threads et en faisant la moyenne.} Commençons par le pire cas qui puisse arriver.
+Comme mentionné dans la section «Concept», notre algorithme marche particulièrement bien pour certains cas, et malheureusement il marche particulièrement mal pour d'autres. Pour mettre ces effets en évidence, nous avons mesuré ses performances sur trois types de tests en particulier, et nous allons commenter les résultats.\footnote{Les tests ont été générés par notre générateur \texttt{gen.c} et les temps ont été obtenus en chronométrant au moins trois fois chaque test avec un nombre de threads et en faisant la moyenne.} Commençons par le pire cas qui puisse arriver.
 
 \newpage
 \subsubsection*{Premier cas: beaucoup de petits facteurs premiers}
@@ -144,9 +144,9 @@ Montrons maintenant un type de cas où notre algorithme se montre particulièrem
 
 Sur ce genre de cas, notre programme va d'abord tenter de factoriser un nombre dans la \emph{waiting list}, ce qui va lui prendre environ $2^{32}$ essais au pire cas. Ensuite, il aura trouvé un facteur premier, qu'il pourra tester sur d'autres nombres en attente. Ceux-ci vont très probablement à leur tour donner de nouveaux facteurs premiers, qui vont permettre de factoriser facilement d'autres nombres, etc. Au final, la découverte du premier facteur premier va mener à une réaction en chaîne qui va permettre de factoriser les autres nombres très facilement.
 
-Au final, ce qui prendra le plus de temps sera de vérifier que tous les facteurs trouvés sont premiers, ce qui prendra de l'ordre de $2^{16}$ opérations par nombre, bien mieux que les $2^{32}$ que nous aurions obtenus avec une simple factorisation parallèle de tous les nombres en producteur-consommateur. Puisque c'est cette partie qui est le facteur limitant, nous avons une complexité de l'ordre de $O(n)$ où $n$ est le nombre d'entiers dans l'input (en éliminant le facteur constant $2^{16}$.
+Au final, ce qui prendra le plus de temps sera de vérifier que tous les facteurs trouvés sont premiers, ce qui prendra de l'ordre de $2^{16}$ opérations par nombre, bien mieux que les $2^{32}$ que nous aurions obtenus avec une simple factorisation parallèle de tous les nombres en producteur-consommateur. Puisque c'est cette partie qui est le facteur limitant, nous avons une complexité de l'ordre de $O(n)$ où $n$ est le nombre d'entiers dans l'input (en éliminant le facteur constant $2^{16}$).
 
-Les résultats sont donnés à la figure~\ref{fig:large-primes}. La tendance en $O(n^2)$ apparaît très clairement et on remarque que l'ajout de threads aide significativement à accélérer le programme, malgré la parallélisation interne. Pour $n=10000$, il y a un facteur $1.29$ de différence entre 1 threads et 2 threads, et un facteur $1.45$ entre 2 threads et 4 threads. Il est normal que l'on ne s'approche pas très près du facteur 2 ici car la vérification de division des facteurs premiers sur $10000$ nombres amène un terme constant non-négligeable.
+Les résultats sont donnés à la figure~\ref{fig:large-primes}. La tendance en $O(n)$ apparaît très clairement et on remarque que l'ajout de threads aide significativement à accélérer le programme, malgré la parallélisation interne. Pour $n=10000$, il y a un facteur $1.29$ de différence entre 1 threads et 2 threads, et un facteur $1.45$ entre 2 threads et 4 threads. Il est normal que l'on ne s'approche pas très près du facteur 2 ici car la vérification de division des facteurs premiers sur $10000$ nombres amène un terme constant non-négligeable.
 
 \begin{figure}[t!]
     \centering
