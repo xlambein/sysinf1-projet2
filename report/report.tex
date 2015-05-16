@@ -82,9 +82,9 @@ Ces deux parties doivent être synchronisées à la manière d'un producteur-con
 
 Nous avons donc un sémaphore \texttt{sem\_full}, dont la valeur est égale au nombre d'entiers présents dans la \emph{waiting list}. À chaque fois qu'un \emph{reader} ou un \emph{factorizer} ajoute un entier dans celle-ci, le sémaphore est posté, et à chaque fois que les \emph{factorizers} ont besoin d'un nouvel entier à factoriser, la boucle principale effectue un wait sur ce sémaphore pour s'assurer qu'il peut en effet récupérer un entier de la \emph{waiting list}.
 
-\subsubsection*{La modification de l'état global}
+\subsubsection*{Protection de \texttt{to\_fact} et de l'état global}
 
-L'état global, constitué notamment de la \emph{waiting list}, de la \emph{prime list} et de \texttt{to\_fact}, peut être sans risque accédé en lecture mais doit toujours être protégé par une unique mutex lors d'un accès en écriture. Il s'agit de la même mutex pour toutes ces données, car la modification de d'une partie de l'état global a systématiquement un impact sur le reste.
+L'état global, constitué notamment de la \emph{waiting list} et de la \emph{prime list}, peut être sans risque accédé en lecture mais doit toujours être protégé par une unique mutex lors d'un accès en écriture. Il s'agit de la même mutex pour toutes ces données, car la modification de d'une partie de l'état global a systématiquement un impact sur le reste. \texttt{to\_fact}, de son côté, peut être accédé sans risque en même temps que les autres composants, et est donc protégé en écriture par sa propre mutex.
 
 \subsubsection*{Commande des \emph{factorizers}}
 
